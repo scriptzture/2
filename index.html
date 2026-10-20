@@ -63,7 +63,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
 #title .press{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);text-align:center;font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--signal);font-weight:600;animation:blink 1.2s 1.1s infinite both}
 #title .trBtns{position:absolute;top:calc(env(safe-area-inset-top,0px) + 18px);right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:2}
 .trB{font-family:var(--f-ui);font-size:11.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:rgba(8,9,11,.55);border:1px solid var(--line);padding:8px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+#trSty{display:flex;border:1px solid var(--line);background:rgba(8,9,11,.55)}#trSty button{font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);background:none;border:0;padding:8px 11px;cursor:pointer}#trSty button:hover{color:var(--paper)}#trSty button.on{color:var(--paper);background:var(--deep);box-shadow:inset 0 -2px 0 var(--signal)}
+@media (max-width:640px){#title .trBtns{flex-wrap:wrap;justify-content:flex-end;left:16px}}
 .trB:hover{border-color:var(--signal);background:var(--deep)}.trB.rec{color:var(--hot)}
+#con{position:fixed;left:0;right:0;top:0;z-index:95;background:rgba(6,7,9,.94);border-bottom:2px solid var(--signal);font-family:var(--f-num);font-size:13px;color:var(--paper);padding:10px max(16px,env(safe-area-inset-left,0px)) 8px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#conLog{max-height:30vh;overflow-y:auto;white-space:pre-wrap;line-height:1.5;color:var(--dim)}#conLog b{color:var(--paper);font-weight:400}#conLog i{color:var(--hot);font-style:normal}
+.conRow{display:flex;gap:8px;align-items:center;margin-top:4px}.conRow span{color:var(--signal)}#conIn{flex:1;background:none;border:0;outline:0;color:var(--paper);font:inherit;padding:4px 0}
 #trv{position:fixed;inset:0;z-index:90;background:#000;cursor:none}
 #trv canvas{width:100%;height:100%;object-fit:contain;display:block}
 #trv .trHint{position:absolute;top:16px;right:18px;font-family:var(--f-num);font-size:12px;letter-spacing:.14em;color:var(--dim);transition:opacity .8s;display:flex;align-items:center;gap:8px}
@@ -458,11 +463,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
     <div><div class="rule"></div><div class="card sub"><span>ASSAULT FRAME WARFARE</span></div></div>
     <div class="tag">Build a frame. Enter the arena. Walk out alone.</div>
   </div>
-  <div class="trBtns"><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
+  <div class="trBtns" hidden><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0356 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0359 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
+<div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
 <div id="trv" hidden><canvas id="trc"></canvas><div class="trHint"><i></i><span class="r">REC · </span>Esc to stop</div></div>
 <div id="trEnd" hidden><b id="trEndT"></b><span id="trEndS"></span><div><button id="trSave" class="trB">Save again</button><button id="trEndClose" class="trB">Close</button></div></div>
 
@@ -5133,6 +5139,7 @@ addEventListener('keydown',e=>{
  if(e.target&&e.target.tagName==='INPUT')return;
  keys[e.code]=true;auInit();
  if(TR.on){if(e.code==='Escape')trStop(false);e.preventDefault();return}
+ if(e.code==='Backquote'||e.key==='~'||e.key==='`'){e.preventDefault();conToggle();return}
  if(game.state==='title'){if(!$('#trEnd').hidden&&e.code==='Escape'){show('#trEnd',false);return}leaveTitle();return}
  if(game.state==='lineup'){if(e.code==='Space'||e.code==='Enter'||e.code==='Escape'){e.preventDefault();skipLineup()}return}
  if(game.state==='intro'){if(game.introT<CARD_T&&(e.code==='Space'||e.code==='Enter'))skipIntro();else if(e.code==='Escape'||e.code==='KeyP')setPause(true);return}
@@ -6249,13 +6256,29 @@ function frame(now){
 const TR_SONG='buckrot-trailer.mp3',TR_BT=60/161.5,TR_PH=.005,TR_END=31.35;
 const trB=k=>TR_PH+k*TR_BT;
 // [beat, shot, options] — a shot lasts until the next entry. 0–36 build on Iron Spine, 36–40 black cards (arena swap), 40 the drop on Red Gorge, 80 the title
-const TR_SHOTS=[
- [0,'reveal'],[8,'tele'],[16,'dolly'],[20,'orbit'],[24,'crane'],[28,'ots'],[30,'flyby'],[31,'top'],[32,'push'],
- [36,'card',{text:'SEVEN FRAMES.'}],[38,'card',{text:'ONE WALKS AWAY.'}],
- [40,'whip',{drop:1}],[44,'missile'],[48,'dolly'],[50,'tele'],[52,'flyby'],[56,'top'],[58,'dutch'],
- [60,'ots'],[61,'card',{text:'LOCK ON.',hard:1}],[62,'low'],[63,'card',{text:'OPEN FIRE.',hard:1}],[64,'crane'],[66,'card',{text:'SURVIVE.',hard:1}],[67,'whip'],
- [68,'push',{kill:1}],[72,'missile'],[74,'low'],[76,'whip',{slow:.5}],[78,'tele'],[80,'title']];
-const TR_SUBS=[[16,24,'BUILD A FRAME.'],[24,32,'ENTER THE ARENA.'],[32,36,'NO TEAMS. NO ALLIES.']];
+// three cuts of the same song. Every style keeps the song's anchors: the dip (beat 36, arena swap), the drop (40) and the title (80)
+// [beat, shot, options] — a shot lasts until the next entry
+const TR_STYLES={
+ action:{name:'Action',kick:1,downOnly:false,flash:1,buildTs:.78,drop:[.28,4],killTs:.35,autoKill:true,filter:'',
+  shots:[[0,'reveal'],[8,'tele'],[16,'dolly'],[20,'orbit'],[24,'crane'],[28,'ots'],[30,'flyby'],[31,'top'],[32,'push'],
+   [36,'card',{text:'SEVEN FRAMES.'}],[38,'card',{text:'ONE WALKS AWAY.'}],
+   [40,'whip',{drop:1}],[44,'missile'],[48,'dolly'],[50,'tele'],[52,'flyby'],[56,'top'],[58,'dutch'],
+   [60,'ots'],[61,'card',{text:'LOCK ON.',hard:1}],[62,'low'],[63,'card',{text:'OPEN FIRE.',hard:1}],[64,'crane'],[66,'card',{text:'SURVIVE.',hard:1}],[67,'whip'],
+   [68,'push',{kill:1}],[72,'missile'],[74,'low'],[76,'whip',{slow:.5}],[78,'tele'],[80,'title']],
+  subs:[[16,24,'BUILD A FRAME.'],[24,32,'ENTER THE ARENA.'],[32,36,'NO TEAMS. NO ALLIES.']]},
+ // long, weighty shots, deep slow motion, soft cards, kicks only on the bar
+ cinematic:{name:'Cinematic',kick:.4,downOnly:true,flash:.55,buildTs:.6,drop:[.16,8],killTs:.22,autoKill:true,filter:'contrast(1.06) saturate(.88)',
+  shots:[[0,'reveal'],[12,'tele'],[20,'dolly'],[24,'orbit'],[30,'crane'],
+   [36,'card',{text:'WALK OUT ALONE.'}],
+   [40,'crane',{drop:1}],[48,'tele'],[52,'push',{kill:1}],[56,'orbit'],[60,'flyby'],[64,'dutch'],[66,'ots'],[68,'push',{kill:1}],[72,'tele'],[76,'whip',{slow:.4}],[80,'title']],
+  subs:[[8,20,'BUILD A FRAME.'],[20,30,'ENTER THE ARENA.']]},
+ // a handful of held frames, no text but the title, no flash or shake, muted colour
+ minimal:{name:'Minimal',kick:0,downOnly:true,flash:0,buildTs:.7,drop:[.5,6],killTs:.5,autoKill:false,filter:'saturate(.5) contrast(1.05)',minTitle:true,
+  shots:[[0,'reveal'],[16,'tele'],[28,'push'],[36,'card',{text:''}],[40,'tele',{drop:1}],[52,'orbit'],[62,'tele'],[70,'crane'],[80,'title']],
+  subs:[]}};
+let trStyle=store.get('trStyle','action');if(!TR_STYLES[trStyle])trStyle='action';
+let TR_SHOTS=TR_STYLES[trStyle].shots,TR_SUBS=TR_STYLES[trStyle].subs,TRS=TR_STYLES[trStyle];
+function trSetStyle(k){if(!TR_STYLES[k])return;trStyle=k;TRS=TR_STYLES[k];TR_SHOTS=TRS.shots;TR_SUBS=TRS.subs;store.set('trStyle',k);document.querySelectorAll('#trSty button').forEach(b=>b.classList.toggle('on',b.dataset.s===k))}
 // flashy, varied loadouts; legs and frame parts are re-rolled until the build fits
 const TR_KITS=[{legs:'lg_hft',wr:'torch',wl:'gatling',sh:'missiles',sh2:'missiles'},{legs:'lg_tk',wr:'napalm',wl:'bazooka',sh:'fae',sh2:'none'},{legs:'lg_qd',wr:'rifle',wl:'hound',sh:'swarm',sh2:'quadm'},
  {legs:'lg_rj',wr:'gatling',wl:'cleaver',sh:'salvo',sh2:'none'},{legs:'lg_trd',wr:'bazooka',wl:'shotgun',sh:'cluster',sh2:'javelin'},{legs:'lg_inf',wr:'pulse',wl:'twinfang',sh:'plasma',sh2:'beam'},{legs:'lg_gar',wr:'lancer',wl:'grenade',sh:'mortar',sh2:'fae'}];
@@ -6330,6 +6353,27 @@ $('#trEndClose').addEventListener('click',()=>show('#trEnd',false));
 $('#trSave').addEventListener('click',trDownload);
 for(const[id,rec]of[['trPlay',false],['trRec',true]]){const b=$('#'+id);b.addEventListener('pointerup',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();if(game.state==='title')trStart(rec)})}
 if(!(window.MediaRecorder&&HTMLCanvasElement.prototype.captureStream))$('#trRec').hidden=true;
+document.querySelectorAll('#trSty button').forEach(b=>{b.addEventListener('pointerup',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();trSetStyle(b.dataset.s)})});trSetStyle(trStyle);
+// ---- console: ~ to open; /trailer lives here
+const CON={el:$('#con'),log:$('#conLog'),inp:$('#conIn'),hist:[],hi:0};
+function conPrint(t,cls){const d=document.createElement('div');if(cls){const b=document.createElement(cls);b.textContent=t;d.appendChild(b)}else d.textContent=t;CON.log.appendChild(d);CON.log.scrollTop=1e9}
+function conToggle(on){on=on??CON.el.hidden;CON.el.hidden=!on;if(on){if(document.pointerLockElement)document.exitPointerLock();for(const k in keys)keys[k]=false;mouseL=mouseR=false;if(!CON.log.childNodes.length)conPrint('Ashfall console · type /help');CON.inp.focus();setTimeout(()=>CON.inp.focus(),0)}else CON.inp.blur()}
+const CON_CMDS={
+ help:()=>{conPrint('/trailer   show or hide the trailer controls on the title screen');conPrint('/clear   clear the console')},
+ clear:()=>{CON.log.innerHTML=''},
+ trailer:()=>{
+  // reveals the trailer controls on the title screen (style picker, play, record); run again to hide them
+  if(game.state!=='title'&&game.state!=='garage'){conPrint('Leave the match first (the trailer controls are on the title screen).','i');return}
+  const box=$('#title .trBtns'),on=box.hidden||game.state!=='title';box.hidden=!on;
+  if(on&&game.state==='garage'){openSlot=null;preview=null;enterTitle()}
+  conPrint(on?'Trailer controls shown on the title screen (top right). /trailer again hides them.':'Trailer controls hidden.','b');if(on)conToggle(false)}};
+CON.inp.addEventListener('keydown',e=>{e.stopPropagation();
+ if(e.code==='Backquote'||e.key==='~'||e.key==='`'||e.code==='Escape'){e.preventDefault();conToggle(false);return}
+ if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();if(!CON.hist.length)return;CON.hi=clamp(CON.hi+(e.code==='ArrowUp'?-1:1),0,CON.hist.length);CON.inp.value=CON.hist[CON.hi]||'';return}
+ if(e.code!=='Enter'&&e.code!=='NumpadEnter')return;
+ const line=CON.inp.value.trim();CON.inp.value='';if(!line)return;CON.hist.push(line);CON.hi=CON.hist.length;conPrint('› '+line);
+ const[cmd,...args]=line.replace(/^\//,'').toLowerCase().split(/\s+/);const f=CON_CMDS[cmd];if(f)f(args);else conPrint('unknown command: /'+cmd+' · type /help','i')});
+CON.inp.addEventListener('keyup',e=>e.stopPropagation());
 
 // ---- director: song clock, segments, cuts, time scale
 const trEase=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,trSm=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
@@ -6346,12 +6390,12 @@ function trTick(rdt){
  let i=-1;if(S>=0)for(let k=0;k<TR_SHOTS.length;k++)if(S>=trB(TR_SHOTS[k][0]))i=k;
  if(i!==TR.shot&&i>=0){TR.shot=i;trCut(i)}
  // beat kicks through the action
- const bi=Math.floor((S-TR_PH)/TR_BT);if(bi!==TR.beat){TR.beat=bi;if(bi>=40&&bi<80&&!(TR.sh&&TR.sh.card))TR.kick=bi%4===0?1:.45}
+ const bi=Math.floor((S-TR_PH)/TR_BT);if(bi!==TR.beat){TR.beat=bi;if(bi>=40&&bi<80&&!(TR.sh&&TR.sh.card)&&TRS.kick&&(!TRS.downOnly||bi%4===0))TR.kick=TRS.kick*(bi%4===0?1:.45)}
  // time scale
- let ts=TR.seg===1?.78:1;const sh=TR.sh;
+ let ts=TR.seg===1?TRS.buildTs:1;const sh=TR.sh;
  if(sh){const u=clamp((S-sh.t0)/Math.max(.01,sh.t1-sh.t0),0,1);
-  if(sh.o.drop)ts=lerp(.28,1,trSm((S-trB(40))/(trB(44)-trB(40))));
-  else if(sh.kind==='kill')ts=lerp(.35,1,trSm(u*1.2-.1));
+  if(sh.o.drop)ts=lerp(TRS.drop[0],1,trSm((S-trB(40))/(trB(40+TRS.drop[1])-trB(40))));
+  else if(sh.kind==='kill')ts=lerp(TRS.killTs,1,trSm(u*1.2-.1));
   else if(sh.o.slow)ts=sh.o.slow}
  if(TR.pre)ts=1;
  TR.ts=ts;
@@ -6362,10 +6406,10 @@ function trTick(rdt){
 function trCut(i){
  const[b,kind,o={}]=TR_SHOTS[i],t0=trB(b),t1=i+1<TR_SHOTS.length?trB(TR_SHOTS[i+1][0]):TR_END;
  const sh={kind,o,t0,t1,s:Math.random()<.5?-1:1,a0:Math.random()*TAU,card:kind==='card'||kind==='title'};
- if(o.drop)TR.flash=1;
+ if(o.drop)TR.flash=TRS.flash;
  if(!sh.card){
   const K=TR.lastKill;
-  if(o.kill&&K&&TR.S-K.S<3.2||(b>=40&&K&&TR.S-K.S<1.2&&!K.used&&(t1-t0)>TR_BT*1.5&&kind!=='missile')){sh.kind='kill';sh.T=K.by&&K.by.alive?K.by:K.victim;sh.V=K.victim;sh.fixed=K.pos.clone();K.used=true}
+  if(o.kill&&K&&TR.S-K.S<3.2||(TRS.autoKill&&b>=40&&K&&TR.S-K.S<1.2&&!K.used&&(t1-t0)>TR_BT*1.5&&kind!=='missile')){sh.kind='kill';sh.T=K.by&&K.by.alive?K.by:K.victim;sh.V=K.victim;sh.fixed=K.pos.clone();K.used=true}
   if(sh.kind==='missile'){const L=projs.filter(p=>(p.type==='missile'||p.type==='rocket'||p.type==='spear'||p.type==='grenade')&&p.age<.6&&(p.life-p.age)>.9&&p.owner&&p.owner.alive);
    if(L.length){const p=L.reduce((a,c)=>specScore(c.owner)>specScore(a.owner)?c:a);sh.p=p;sh.T=p.owner;sh.lp=p.pos.clone();sh.lv=p.vel.clone().normalize()}else sh.kind='ots'}
   if(!sh.T)sh.T=trPickSubject();
@@ -6447,7 +6491,7 @@ function trCam(dt){
 function trText(x,str,X,Y,sp,font,col){x.font=font;x.fillStyle=col;let w=0;const ws=[...str].map(ch=>{const m=x.measureText(ch).width;w+=m+sp;return m});w-=sp;let cx=X-w/2;[...str].forEach((ch,i)=>{x.fillText(ch,cx,Y);cx+=ws[i]+sp});return w}
 function trPost(){
  const x=TR.cx,W=TR.W,H=TR.H,k=H/1080,S=TR.S,sh=TR.sh;
- x.globalAlpha=1;const src=renderer.domElement;if(src instanceof HTMLCanvasElement)x.drawImage(src,0,0,W,H);
+ x.globalAlpha=1;const src=renderer.domElement;if(src instanceof HTMLCanvasElement){if(TRS.filter)x.filter=TRS.filter;x.drawImage(src,0,0,W,H);x.filter='none'}
  const bar=Math.round((H-W/2.39)/2);x.fillStyle='#000';x.fillRect(0,0,W,bar);x.fillRect(0,H-bar,W,bar);
  if(TR.fade>0){x.globalAlpha=TR.fade;x.fillRect(0,0,W,H);x.globalAlpha=1}
  x.textBaseline='middle';x.textAlign='left';
@@ -6459,8 +6503,8 @@ function trPost(){
  if(sh&&sh.kind==='title'){const u=S-sh.t0;x.fillStyle='#000';x.fillRect(0,0,W,H);
   const a1=trSm(u/.45),a2=trSm((u-.35)/.5),a3=trSm((u-.7)/.5),out=1-trSm((u-(TR_END-sh.t0-.35))/.3);
   const fT=`800 ${Math.round(170*k)}px "Shippori Mincho B1","Noto Serif JP",Georgia,serif`,fK=`800 ${Math.round(150*k)}px "Shippori Mincho B1","Noto Serif JP",Georgia,serif`;
-  x.font=fT;let wA=-14*k;for(const ch of'ASHFALL')wA+=x.measureText(ch).width+14*k;x.font=fK;const wK=x.measureText('灰').width,gap=44*k,x0=W/2-(wK+gap+wA)/2,ax=x0+wK+gap+wA/2,cy=H/2-24*k;
-  x.globalAlpha=a1*out;x.fillStyle='#ff2236';x.fillText('灰',x0,cy+4*k);
+  x.font=fT;let wA=-14*k;for(const ch of'ASHFALL')wA+=x.measureText(ch).width+14*k;x.font=fK;const wK=TRS.minTitle?0:x.measureText('灰').width,gap=TRS.minTitle?0:44*k,x0=W/2-(wK+gap+wA)/2,ax=x0+wK+gap+wA/2,cy=H/2-24*k;
+  x.globalAlpha=a1*out;x.fillStyle='#ff2236';if(!TRS.minTitle)x.fillText('灰',x0,cy+4*k);
   const scale=1+.04*(1-a1);x.save();x.translate(ax,cy);x.scale(scale,scale);trText(x,'ASHFALL',0,0,14*k,fT,'#f2efe9');x.restore();
   x.globalAlpha=a2*out;x.fillStyle='#ff2236';const rw=wA*a2;x.fillRect(ax-rw/2,cy+100*k,rw,3*k);
   x.globalAlpha=a3*out;trText(x,'ASSAULT FRAME WARFARE',ax,cy+146*k,14*k,`600 ${Math.round(34*k)}px "Chakra Petch","Arial Narrow",sans-serif`,'#c9c4bc');x.globalAlpha=1}
