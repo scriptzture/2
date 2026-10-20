@@ -94,6 +94,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
 .step:hover{color:var(--paper)}
 .step.on{color:#fff;border-color:var(--signal)}.step.on i{color:var(--signal)}
 .step .arrow{color:var(--line);font-style:normal}
+/* the two sortie steps sit under one heading */
+.stepGroup{display:flex;flex-direction:column;align-items:stretch;margin-left:6px;padding-left:8px;border-left:1px solid var(--line)}
+.sgHead{font-size:9.5px;font-weight:700;letter-spacing:.34em;text-transform:uppercase;color:var(--signal);padding:0 14px;line-height:1;margin-top:-4px;margin-bottom:-2px}
+.sgRow{display:flex;gap:2px}
+.arenaDet{display:flex;flex-direction:column;gap:10px}
+.arenaDet .big{display:block;width:100%;aspect-ratio:16/10;border:1px solid var(--line);background:#0b0c0e;overflow:hidden}
+.arenaDet .big img,.arenaDet .big svg{display:block;width:100%;height:100%;object-fit:cover}
+.arenaDet b{font-family:var(--f-card);font-size:30px;line-height:1.05;color:#fff;transform:skewX(-6deg);transform-origin:left}
+.arenaDet .tg{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.arenaDet p{margin:0;color:var(--paper);opacity:.85;font-size:13.5px;line-height:1.55}
+.arenaDet .chips{display:flex;flex-wrap:wrap;gap:6px}
+.arenaPick{display:grid;grid-template-columns:118px minmax(0,1fr);gap:4px 14px;align-items:center;background:var(--plate);border:1px solid var(--line);overflow:hidden}
+.arenaPick .th{grid-row:1/4;width:118px;height:100%;min-height:86px}.arenaPick .th img,.arenaPick .th svg{display:block;width:100%;height:100%;object-fit:cover}
+.arenaPick b{font-family:var(--f-card);font-size:19px;color:#fff;padding-top:10px}.arenaPick small{color:var(--dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.arenaPick button{justify-self:start;margin-bottom:10px;background:none;border:0;padding:0;color:var(--signal);font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+@media (max-width:900px){.steps{flex-wrap:wrap;row-gap:4px}.step{padding:6px 8px 5px;letter-spacing:.12em;font-size:12px}.stepGroup{margin-left:0;padding-left:4px}.sgHead{padding:0 8px}}
 .gTools{margin-left:auto;display:flex;align-items:center;gap:14px}
 .cs{display:flex;align-items:center;gap:10px}
 .cs input{width:150px;max-width:40vw;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--paper);font-family:var(--f-num);font-size:17px;letter-spacing:.12em;text-transform:uppercase;padding:3px 0}
@@ -109,8 +125,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
 .rnd span{color:var(--signal);font-size:15px;letter-spacing:0;display:inline-block;transition:transform .35s}
 .rnd:hover{border-color:var(--signal)}.rnd:active span{transform:rotate(180deg)}
 .ghost:disabled{opacity:.35;cursor:default}.ghost:disabled:hover{color:var(--dim);border-color:var(--line)}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--line)}
-.tab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 2px 8px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 1px 8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;color:var(--dim)}
 .tab:hover{color:var(--paper)}
 .tab.on{color:#fff;border-color:var(--signal)}
 .slotList{display:flex;flex-direction:column;gap:8px}
@@ -228,11 +244,97 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   .gTools{margin-left:0;width:100%;justify-content:space-between}
   .gScreen{display:flex;flex-direction:column}
   .gMid{height:40vh;order:-1;flex:none}
-  #scrB .gMid{height:24vh}
+  #scrB .gMid,#scrC .gMid{height:24vh}
   .gPane{overflow:visible;background:rgba(8,9,11,.94);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .gRight{padding-top:4px}
   .next,.sortie{margin-top:8px}
 }
+
+/* ---------- sortie steps: full-screen pages over the hangar ---------- */
+.gScreen.sFull{display:flex;flex-direction:column;pointer-events:auto;background:linear-gradient(180deg,rgba(8,9,11,.97),rgba(8,9,11,.93));min-height:0}
+.sWrap{flex:1;min-height:0;overflow-y:auto;padding:16px max(22px,env(safe-area-inset-right,0px)) 18px max(22px,env(safe-area-inset-left,0px));touch-action:pan-y}
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.shead h2{margin:4px 0 0;font-family:var(--f-card);font-weight:800;font-size:clamp(26px,3.2vw,42px);line-height:1;color:#fff;transform:skewX(-6deg);transform-origin:left}
+.flow{display:flex;gap:0;margin:0;padding:0;list-style:none}
+.flow li{display:flex;align-items:center;gap:8px;padding:7px 16px 7px 12px;font-size:11.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);margin-left:-1px;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,0 100%)}
+.flow li i{font-style:normal;font-family:var(--f-num);width:18px;height:18px;display:grid;place-items:center;border:1px solid currentColor;font-size:11px}
+.flow li.on{color:#fff;background:var(--signal);border-color:var(--signal)}.flow li.done{color:var(--paper)}
+.arenaGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+#scrB .arena{display:flex;flex-direction:column;text-align:left;background:var(--plate);border:1px solid var(--line);padding:0;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
+#scrB .arena:hover{border-color:rgba(255,34,54,.6);transform:translateY(-2px)}
+#scrB .arena.on{border-color:var(--signal);background:var(--deep);box-shadow:0 0 0 1px var(--signal),0 10px 30px rgba(255,34,54,.18)}
+#scrB .arena .th{width:100%;height:auto;min-height:0;aspect-ratio:16/9;grid-row:auto;position:relative}
+#scrB .arena.on .th::after{content:"SELECTED";position:absolute;left:10px;top:10px;background:var(--signal);color:#fff;font-size:10px;font-weight:700;letter-spacing:.24em;padding:4px 8px}
+#scrB .arena b{padding:10px 12px 0}#scrB .arena p{padding:0 12px;font-size:12.5px}#scrB .arena .chips{padding:8px 12px 12px}
+.sbar{flex:none;display:flex;align-items:center;gap:18px;padding:12px max(22px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(22px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:rgba(8,9,11,.98)}
+.sbSel{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.sbSel b{font-family:var(--f-card);font-size:24px;color:#fff;line-height:1.1}.sbSel small{color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.go{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;gap:0 18px;background:var(--signal);border:0;color:#fff;padding:12px 18px 11px 22px;text-align:left;clip-path:polygon(0 0,100% 0,100% 70%,96% 100%,0 100%);cursor:pointer}
+.go span{font-size:14px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}.go small{grid-row:2;font-size:11px;letter-spacing:.14em;opacity:.85;text-transform:uppercase}.go em{grid-row:1/3;grid-column:2;font-style:normal;font-size:24px}
+.go:hover{filter:brightness(1.12)}
+.modeLay{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:28px;align-items:start}
+.modeMain{display:flex;flex-direction:column;gap:22px;min-width:0}
+.mcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mcard{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--plate);border:1px solid var(--line);border-top:3px solid var(--line);padding:16px 16px 18px;cursor:pointer;color:var(--paper);transition:border-color .15s,background .15s}
+.mcard b{font-family:var(--f-card);font-weight:800;font-size:clamp(20px,2vw,28px);color:#fff;line-height:1;transform:skewX(-6deg);transform-origin:left}
+.mcard em{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+.mcard span{font-size:13px;line-height:1.5;opacity:.85}
+.mcard:hover{border-color:rgba(255,34,54,.55)}
+.mcard.on{background:linear-gradient(180deg,rgba(255,34,54,.22),rgba(255,34,54,.06));border-color:var(--signal);border-top-color:var(--signal)}.mcard.on em{color:var(--signal)}
+.setGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px;align-items:start}
+.setGrid .note{min-height:3.1em}
+.seg.fixed button{pointer-events:none;opacity:.5}
+.deployCol{display:flex;flex-direction:column;gap:14px;position:sticky;top:0}
+.deployCol .sortie{margin-top:4px}.deployCol .ghost{align-self:flex-start}
+@media (max-width:900px){
+ .gScreen.sFull{display:flex;min-height:calc(100vh - 120px)}
+ .sWrap{overflow:visible}
+ .modeLay{grid-template-columns:1fr}.mcards{grid-template-columns:1fr}.setGrid{grid-template-columns:1fr}.deployCol{position:static}
+ .sbar{position:sticky;bottom:0;flex-wrap:wrap;gap:10px}.sbSel{order:-1;flex-basis:100%}.go{flex:1}
+ .flow li{padding:5px 12px 5px 8px;font-size:10px}
+ #gTop{background:rgba(8,9,11,.98)}
+ .go span{font-size:12px;letter-spacing:.16em}.go small{font-size:10px}.sbSel b{font-size:20px}
+}
+
+/* ---------- pilot profiles ---------- */
+#profiles{position:fixed;inset:0;z-index:31;background:radial-gradient(ellipse at 50% 30%,rgba(20,22,27,.88),rgba(6,7,9,.97));display:flex;overflow-y:auto;font-family:var(--f-ui)}
+.pfWrap{margin:auto;width:min(1180px,calc(100vw - 32px));padding:28px 0 36px;display:flex;flex-direction:column;gap:22px}
+.pfHead{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:end}
+.pfHead .ghost{align-self:start;margin-top:4px}
+.pfHead h2{margin:4px 0 0;font-family:var(--f-card);font-weight:800;font-size:clamp(30px,4vw,52px);line-height:1;color:#fff;transform:skewX(-6deg);transform-origin:left}
+.pfHead p{grid-column:2;margin:0;color:var(--dim);font-size:13.5px}
+.pfGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pf{position:relative;display:flex;flex-direction:column;gap:12px;min-height:300px;background:var(--plate);border:1px solid var(--line);border-top:3px solid var(--line);padding:20px 20px 18px;color:var(--paper)}
+.pf.used{border-top-color:var(--signal);cursor:pointer;transition:border-color .15s,transform .15s,background .15s}
+.pf.used:hover{border-color:rgba(255,34,54,.6);border-top-color:var(--signal);transform:translateY(-2px);background:rgba(255,34,54,.05)}
+.pf.cur{box-shadow:0 0 0 1px var(--signal)}
+.pf .slot{font-family:var(--f-num);font-size:11px;letter-spacing:.2em;color:var(--dim)}
+.pf .nm{font-family:var(--f-card);font-weight:800;font-size:32px;line-height:1;color:#fff;transform:skewX(-6deg);transform-origin:left;word-break:break-word}
+.pf .rk{display:flex;align-items:baseline;gap:10px}.pf .rk b{font-family:var(--f-num);font-weight:400;font-size:30px;color:var(--signal)}.pf .rk span{font-size:13px;letter-spacing:.16em;text-transform:uppercase}
+.pf .xb{height:5px;background:rgba(222,226,232,.12);position:relative}.pf .xb i{position:absolute;left:0;top:0;bottom:0;background:var(--signal)}
+.pf .meta{font-family:var(--f-num);font-size:11.5px;color:var(--dim);line-height:1.7}
+.pf .acts{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pf .acts .go2{flex:1;background:var(--signal);border:0;color:#fff;padding:11px 12px;font-size:12.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;cursor:pointer}
+.pf .acts .ghost.warn{color:var(--hot);border-color:rgba(255,92,106,.5)}
+.pf.empty{align-items:stretch;justify-content:center;border-style:dashed;text-align:center}
+.pf.empty .plus{font-size:44px;color:var(--signal);line-height:1}
+.pf.empty .hint2{color:var(--dim);font-size:13px}
+.pf input{background:transparent;border:0;border-bottom:1px solid var(--signal);color:#fff;font-family:var(--f-num);font-size:22px;letter-spacing:.12em;text-transform:uppercase;padding:4px 0;width:100%;text-align:center}
+.pf input:focus{outline:none}
+.pilotB{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:0;border-left:1px solid var(--line);padding:0 0 0 14px;cursor:pointer;color:var(--paper)}
+.pilotB b{font-family:var(--f-num);font-weight:400;font-size:15px;letter-spacing:.1em}.pilotB:hover b{color:var(--signal)}
+@media (max-width:900px){.pfGrid{grid-template-columns:1fr}.pf{min-height:0}.pfHead{grid-template-columns:1fr}.pfHead p{grid-column:1}}
+/* ---------- saved loadouts ---------- */
+.ldList{display:flex;flex-direction:column;gap:10px}
+.ld{border:1px solid var(--line);background:var(--plate);padding:12px 12px 11px;display:flex;flex-direction:column;gap:7px}
+.ld.cur{border-color:var(--signal)}
+.ld .lh{display:flex;align-items:baseline;gap:10px}.ld .lh i{font-style:normal;font-family:var(--f-num);font-size:11px;color:var(--signal)}
+.ld .lh input{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;color:#fff;font-family:var(--f-ui);font-size:15px;font-weight:700;letter-spacing:.06em;padding:1px 0}
+.ld .lh input:focus{outline:none;border-color:var(--signal)}
+.ld .ls{font-family:var(--f-num);font-size:11px;color:var(--dim);line-height:1.55}
+.ld .la{display:flex;gap:6px}.ld .la button{flex:1;padding:7px 6px}
+.ld .la .ldLoad{background:var(--signal);border:0;color:#fff;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.ld .la .ldLoad:disabled{opacity:.3}
+.ld.empty .lh input{color:var(--dim)}
 
 /* ---------- HUD ---------- */
 #hud{position:fixed;inset:0;z-index:12;pointer-events:none;font-family:var(--f-ui)}
@@ -498,22 +600,32 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   </div>
   <div class="trBtns" hidden><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0368 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0373 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
 <div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
 <div id="trv" hidden><canvas id="trc"></canvas><div class="trHint"><i></i><span class="r">REC · </span>Esc to stop</div></div>
 <div id="trEnd" hidden><b id="trEndT"></b><span id="trEndS"></span><div><button id="trSave" class="trB">Save again</button><button id="trEndClose" class="trB">Close</button></div></div>
 
+<div id="profiles" hidden>
+  <div class="pfWrap">
+    <div class="pfHead"><button class="ghost" id="pfBack">‹ Title</button><div><span class="kick">Hangar 03 · pilot registry</span><h2>Select pilot</h2></div><p>Each pilot keeps their own frame, loadouts, match setup and rank. Settings are shared.</p></div>
+    <div class="pfGrid" id="pfGrid"></div>
+  </div>
+</div>
 <div id="garage" hidden>
   <header id="gTop">
     <div class="gBrand"><span class="kick">Hangar 03</span><b class="card"><span>ASHFALL</span></b></div>
     <nav class="steps" role="tablist" aria-label="Hangar steps">
       <button class="step back" id="toTitle" title="Back to the start screen"><i>‹</i>Title</button>
       <button class="step on" id="stepA" role="tab" aria-selected="true"><i>01</i>Assembly</button>
-      <button class="step" id="stepB" role="tab" aria-selected="false"><i>02</i>Sortie</button>
+      <div class="stepGroup"><span class="sgHead">Sortie</span><div class="sgRow">
+        <button class="step" id="stepB" role="tab" aria-selected="false"><i>02</i>Arena</button>
+        <button class="step" id="stepC" role="tab" aria-selected="false"><i>03</i>Mode</button>
+      </div></div>
     </nav>
     <div class="gTools">
+      <button class="pilotB" id="pilotB" title="Switch pilot"><span class="lbl">Pilot</span><b id="pilotN"></b></button>
       <div class="rankB" id="rankB"><b>R1</b><span>Recruit</span><i><u></u></i></div>
       <label class="cs"><span class="lbl">Callsign</span><input id="callsign" maxlength="12" spellcheck="false" autocomplete="off"></label>
       <button class="ghost" id="gSet">Settings</button>
@@ -530,28 +642,44 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
     <aside class="gPane gRight">
       <div class="frameHead"><span class="kick">Frame readout</span><b id="fWeight"></b></div>
       <div class="stats" id="stats"></div>
-      <button class="next" id="toSortie"><span>Sortie setup<small id="nextNote"></small></span><span aria-hidden="true">→</span></button>
+      <button class="next" id="toSortie"><span>Sortie · choose arena<small id="nextNote"></small></span><span aria-hidden="true">→</span></button>
     </aside>
   </section>
-  <section class="gScreen" id="scrB" hidden>
-    <aside class="gPane gLeft">
-      <div class="kick">Select arena</div>
-      <div class="arenas" id="arenas"></div>
-    </aside>
-    <div class="gMid"><div class="hint">Drag to rotate · scroll to zoom</div></div>
-    <aside class="gPane gRight">
-      <div class="sect modeSect"><div class="lbl">Game mode</div><div class="mtabs" id="mode"></div><div class="note" id="modeNote"></div></div>
-      <div class="sect"><div class="lbl">View</div><div class="seg" id="view"></div></div>
-      <div class="sect" id="tcSect" hidden><div class="lbl">Number of teams</div><div class="seg" id="tcount"></div></div>
-      <div class="sect"><div class="lbl" id="oppLbl">Opponents</div><div class="seg" id="opp"></div></div>
-      <div class="sect"><div class="lbl">Match length</div><div class="seg" id="len"></div></div>
-      <div class="sect"><div class="lbl" id="capLbl">Kill cap</div><div class="seg" id="cap"></div><div class="note" id="lenNote"></div></div>
-      <div class="sect"><div class="lbl">Pilots</div><div class="seg" id="diff"></div><div class="note" id="diffNote"></div></div>
-      <div class="sum" id="frameSum"></div>
-      <div class="keys" id="keys"></div>
-      <button class="sortie" id="sortie"><b>DEPLOY</b><small id="sortieSub">Launch frame</small></button>
-      <div><button class="ghost" id="toAssembly">← Back to assembly</button></div>
-    </aside>
+  <section class="gScreen sFull" id="scrB" hidden>
+    <div class="sWrap">
+      <div class="shead"><div><span class="kick">Sortie · step 1 of 2</span><h2>Choose your arena</h2></div><ol class="flow"><li class="on"><i>1</i>Arena</li><li><i>2</i>Game mode</li><li><i>›</i>Deploy</li></ol></div>
+      <div class="arenaGrid arenas" id="arenas"></div>
+    </div>
+    <div class="sbar">
+      <button class="ghost" id="toAssembly">← Assembly</button>
+      <div class="sbSel"><span class="kick">Selected arena</span><b id="selName"></b><small id="selTag"></small></div>
+      <button class="go" id="toMode"><span>Next · choose game mode</span><small id="modeNext"></small><em aria-hidden="true">→</em></button>
+    </div>
+  </section>
+  <section class="gScreen sFull" id="scrC" hidden>
+    <div class="sWrap">
+      <div class="shead"><div><span class="kick">Sortie · step 2 of 2</span><h2>Choose the game mode</h2></div><ol class="flow"><li class="done"><i>✓</i>Arena</li><li class="on"><i>2</i>Game mode</li><li><i>›</i>Deploy</li></ol></div>
+      <div class="modeLay">
+        <div class="modeMain">
+          <div class="mcards" id="mode"></div>
+          <div class="setGrid">
+            <div class="sect"><div class="lbl">View</div><div class="seg" id="view"></div><div class="note" id="modeNote"></div></div>
+            <div class="sect"><div class="lbl">Match length</div><div class="seg" id="len"></div></div>
+            <div class="sect" id="tcSect"><div class="lbl">Teams</div><div class="seg" id="tcount"></div></div>
+            <div class="sect"><div class="lbl" id="oppLbl">Opponents</div><div class="seg" id="opp"></div></div>
+            <div class="sect"><div class="lbl" id="capLbl">Kill cap</div><div class="seg" id="cap"></div><div class="note" id="lenNote"></div></div>
+            <div class="sect"><div class="lbl">Pilots</div><div class="seg" id="diff"></div><div class="note" id="diffNote"></div></div>
+          </div>
+        </div>
+        <aside class="deployCol">
+          <div class="arenaPick" id="arenaPick"></div>
+          <div class="sum" id="frameSum"></div>
+          <div class="keys" id="keys"></div>
+          <button class="sortie" id="sortie"><b>DEPLOY</b><small id="sortieSub">Launch frame</small></button>
+          <button class="ghost" id="toArena">← Back to arena</button>
+        </aside>
+      </div>
+    </div>
   </section>
 </div>
 
@@ -666,7 +794,19 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rand=(a,b)=>a+Math.
 const rint=(a,b)=>Math.floor(rand(a,b+1)), pick=a=>a[Math.floor(Math.random()*a.length)];
 const TAU=Math.PI*2;
 const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d};
-const store={get(k,d){try{const v=localStorage.getItem('ashfall.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ashfall.'+k,JSON.stringify(v))}catch(e){}}};
+// pilot profiles: three slots on one machine; frame, match setup, progression and loadouts are kept per profile, settings are shared
+const PROFILE_KEYS=['build','match','prog','tab','loadouts'];let PROFILE=0;
+const skey=k=>PROFILE_KEYS.includes(k)?`ashfall.p${PROFILE}.${k}`:'ashfall.'+k;
+const store={get(k,d){try{const v=localStorage.getItem(skey(k));return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(skey(k),JSON.stringify(v))}catch(e){}},
+ del(k){try{localStorage.removeItem(skey(k))}catch(e){}}};
+// first run with profiles: an existing save becomes profile 1
+(function(){try{
+ if(localStorage.getItem('ashfall.profiles')==null){const prof=[null,null,null];
+  if(['build','prog','match'].some(k=>localStorage.getItem('ashfall.'+k)!=null)){
+   for(const k of PROFILE_KEYS){const v=localStorage.getItem('ashfall.'+k);if(v!=null)localStorage.setItem('ashfall.p0.'+k,v)}
+   let nm='ASH-01';try{nm=JSON.parse(localStorage.getItem('ashfall.build')).callsign||nm}catch(e){}prof[0]={name:nm,created:Date.now(),last:Date.now(),matches:0}}
+  localStorage.setItem('ashfall.profiles',JSON.stringify(prof))}
+ PROFILE=Math.max(0,Math.min(2,+(localStorage.getItem('ashfall.profile')||0)||0))}catch(e){}})();
 function seeded(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const V3=THREE.Vector3;
@@ -945,7 +1085,16 @@ const AI_TYPES=[
  {id:'aerial',tag:'RAPTOR',range:1.1,strafe:1.1,orbit:.8,qb:1,dashIn:.2,alt:[0,220,460],abDist:.8,fire:1,retreat:.25,pick:'near',
   moods:{dive:4,flank:1,none:2},wr:['bazooka','hornet','grenade','twinfang','hound'],wl:['grenade','rifle','twinfang','napalm'],sh:['mortar','salvo','missiles','javelin','cluster','ripple','quadm','fae']},
  {id:'anchor',tag:'BULWARK',range:.9,strafe:1.5,orbit:.4,qb:.5,dashIn:0,alt:[.9,0,20],abDist:1.2,fire:1.4,retreat:0,pick:'near',
-  moods:{hold:4,press:1,none:2},legs:['lg_tk','lg_hv','lg_qd','lg_jug','lg_crb','lg_trd'],wr:['gatling','bazooka','grenade','napalm'],wl:['gatling','grenade','twinfang','torch'],sh:['barrier','plasma','mortar','flak','halberd','fae']}];
+  moods:{hold:4,press:1,none:2},legs:['lg_tk','lg_hv','lg_qd','lg_jug','lg_crb','lg_trd'],wr:['gatling','bazooka','grenade','napalm'],wl:['gatling','grenade','twinfang','torch'],sh:['barrier','plasma','mortar','flak','halberd','fae']},
+ // ambusher: stays low and out of the target's view, works round behind it (or a fight it isn't in), strikes hard at close range, then fades out again
+ {id:'stalker',tag:'STALKER',range:.5,strafe:1.2,orbit:.6,qb:1.3,dashIn:.6,alt:[.95,0,25],abDist:2.2,fire:1.3,retreat:0,pick:'busy',
+  moods:{flank:2,none:3},legs:['lg_rj','lg_sti','lg_dng','lg_cml','lg_spr','lg_bi'],wr:['slug','shotgun','bazooka','duckfoot','harpoon','twinfang'],wl:['blade','cleaver','shotgun','slug'],sh:['salvo','plasma','grapeshot','fae','javelin']},
+ // jouster: assault-boosts straight through the target, unloading at point-blank on the pass, overshoots, wheels round at range and comes again
+ {id:'charger',tag:'CHARGER',range:.6,strafe:1.4,orbit:.3,qb:.9,dashIn:.8,alt:[.5,10,90],abDist:.25,fire:1.4,retreat:0,pick:'near',
+  moods:{none:1},wr:['shotgun','bazooka','slug','gatling','twinfang','hmg'],wl:['blade','cleaver','shotgun','gatling'],sh:['salvo','missiles','plasma','scatter','chaingun']},
+ // guardian: in a team it shadows a teammate (the pilot first) and turns on whoever hits them; alone it holds its ground and answers whoever hit it last
+ {id:'warden',tag:'WARDEN',range:1,strafe:1.3,orbit:.55,qb:.8,dashIn:.1,alt:[.7,0,60],abDist:1,fire:1.15,retreat:0,pick:'grudge',
+  moods:{hold:2,none:3,flank:1},legs:['lg_hv','lg_jug','lg_gar','lg_inf','lg_mrc','lg_qd'],wr:['rifle','gatling','pulse','carbine','hmg','lancer'],wl:['rifle','pulse','arc','gatling','carbine'],sh:['barrier','missiles','flak','swarm','barrier']}];
 const wpick=w=>{let t=0;for(const k in w)t+=w[k];let r=Math.random()*t;for(const k in w){r-=w[k];if(r<=0)return k}return'none'};
 const PILOT={ap:1.25,stab:1.15,dmg:1.4,imp:1.25};
 const DIFFS=[
@@ -998,16 +1147,20 @@ const UNLOCK={};{const cats=['weapon','head','shoulder','core','arms','legs','bo
  const per=Math.ceil(order.length/16);order.forEach((p,i)=>UNLOCK[p.id]=2+Math.floor(i/per))}
 
 // =====================================================================
-let build=Object.assign({},DEFAULT_BUILD,store.get('build',{}));
+let settings=Object.assign({sens:1,invY:false,camSide:1,camDist:'mid',qual:'high',vol:.7,music:.6,lines:true,unlockAll:false},store.get('settings',{}));
+let build,match,prog;
+function loadProfileData(){
+build=Object.assign({},DEFAULT_BUILD,store.get('build',{}));
 for(const k of['head','core','arms','legs','booster','wr','wl','sh','sh2'])if(!PARTS[catOf(k)].some(p=>p.id===build[k]))build[k]=DEFAULT_BUILD[k];
 for(const s of SLOTS){if(!PARTS[s.cat].some(p=>p.id===build[s.k]))build[s.k]=DEFAULT_BUILD[s.k]}
 if(!(build.paint>=0&&build.paint<PAINTS.length))build.paint=0;
-let match=Object.assign({arena:'basin',opp:3,diff:'veteran',len:300,cap:0},store.get('match',{}));if(![0,5,10,15,20].includes(match.cap))match.cap=0;if(![210,300,420].includes(match.len))match.len=300;match.opp=clamp(Math.round(match.opp||3),1,8);
+match=Object.assign({arena:'basin',opp:3,diff:'veteran',len:300,cap:0},store.get('match',{}));if(![0,5,10,15,20].includes(match.cap))match.cap=0;if(![210,300,420].includes(match.len))match.len=300;match.opp=clamp(Math.round(match.opp||3),1,8);
 if(!['ffa','tdm','cp'].includes(match.mode))match.mode='ffa';match.team=clamp(Math.round(match.team||4),2,6);if(![0,15,30,50].includes(match.tcap))match.tcap=30;if(![100,200,300].includes(match.tickets))match.tickets=200;if(![2,3,4].includes(match.teams))match.teams=2;
 if(!ARENAS.some(a=>a.id===match.arena))match.arena='basin';
-let settings=Object.assign({sens:1,invY:false,camSide:1,camDist:'mid',qual:'high',vol:.7,music:.6,lines:true,unlockAll:false},store.get('settings',{}));
-let prog=Object.assign({xp:0},store.get('prog',{}));
+prog=Object.assign({xp:0},store.get('prog',{}));
 if(PAINTS[build.paint]&&PAINTS[build.paint].rank&&!settings.unlockAll&&rankInfo(prog.xp).rank<PAINTS[build.paint].rank)build.paint=0;
+}
+loadProfileData();
 // every part is available for now; ranks will gate something else later (UNLOCK stays defined for that)
 const isUnlocked=id=>true;
 const QUAL={high:{pr:2,shadow:4096,bloom:true},low:{pr:1,shadow:2048,bloom:false}};
@@ -2385,17 +2538,24 @@ function musicInit(){
  MUSIC.i=Math.floor(Math.random()*MUSIC_TRACKS.length);
  const el=new Audio(MUSIC_TRACKS[MUSIC.i]);el.loop=false;el.preload='auto';MUSIC.el=el;
  const label=()=>{const e=$('#tTrack');if(e)e.textContent='♪ '+MUSIC_TRACKS[MUSIC.i].replace('.mp3','').replace(/-/g,' ').toUpperCase()};label();
- const next=()=>{MUSIC.i=(MUSIC.i+1)%MUSIC_TRACKS.length;el.src=MUSIC_TRACKS[MUSIC.i];label();el.play().catch(()=>{})};
- el.addEventListener('ended',next);el.addEventListener('error',()=>{if(!MUSIC.skips||MUSIC.skips<MUSIC_TRACKS.length){MUSIC.skips=(MUSIC.skips||0)+1;next()}});
+ const next=MUSIC.next=()=>{MUSIC.i=(MUSIC.i+1)%MUSIC_TRACKS.length;el.src=MUSIC_TRACKS[MUSIC.i];label();el.play().catch(()=>{})};
+ el.addEventListener('ended',next);el.addEventListener('playing',()=>{MUSIC.skips=0});
+ el.addEventListener('error',()=>{MUSIC.skips=(MUSIC.skips||0)+1;if(MUSIC.skips<=MUSIC_TRACKS.length)next();else setTimeout(()=>{MUSIC.skips=0;next()},8000)});
  // pages opened straight from disk can't route media through Web Audio (it plays silent), so use the element's own volume there
  try{if(AU.ctx&&location.protocol!=='file:'){const src=AU.ctx.createMediaElementSource(el),g=AU.ctx.createGain();g.gain.value=0;src.connect(g);g.connect(AU.ctx.destination);MUSIC.g=g}}catch(e){MUSIC.g=null}
  if(!MUSIC.g)el.volume=0;
  el.play().catch(()=>{});
 }
 // silent in combat: fades out at ENGAGE, returns on the results screen
-const MUSIC_LEVEL={title:1,garage:.9,lineup:.8,intro:.6,fight:0,paused:.35,results:.9};
+const MUSIC_LEVEL={title:1,profiles:.95,garage:.9,lineup:.8,intro:.6,fight:0,paused:.35,results:.9};
+// the playlist must never stall: a background tab can swallow an 'ended' or refuse a play(), so check it while the game runs and on return
+function musicKick(){const el=MUSIC.el;if(!el||document.hidden)return;if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume().catch(()=>{});
+ if(el.ended||el.duration&&el.currentTime>=el.duration-.05){MUSIC.next&&MUSIC.next();return}if(el.paused)el.play().catch(()=>{})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(musicKick,120)});
+addEventListener('focus',()=>setTimeout(musicKick,120));
 function updateMusic(dt){
- if(!MUSIC.el)return;const target=(MUSIC_LEVEL[game.state]??.8)*settings.music*.85;
+ if(!MUSIC.el)return;
+ if((MUSIC.chk=(MUSIC.chk||0)-dt)<=0){MUSIC.chk=1.5;musicKick()}const target=(MUSIC_LEVEL[game.state]??.8)*settings.music*.85;
  if(MUSIC.g&&AU.ctx)MUSIC.g.gain.setTargetAtTime(target,AU.ctx.currentTime,.6);
  else MUSIC.el.volume=clamp(lerp(MUSIC.el.volume,target,1-Math.exp(-dt*2)),0,1);
 }
@@ -5193,7 +5353,8 @@ function damage(m,dmg,by,at,opt={}){
   const key=by.name+'|'+(opt.src||'impact');const L=m.dmgLog||(m.dmgLog={});(L[key]||(L[key]={who:by,src:opt.src||'Impact',dmg:0})).dmg+=dmg}
  if((by===player||m===player)&&(opt.imp||0)>=1400)game.hitStop=.055;
  if(m===player){hurt=Math.min(1,hurt+dmg/1800);shake=Math.min(1.6,shake+dmg/1800);sfx(HIT_SFX[opt.kind]||'hitK',null,clamp(dmg/500,.45,1));if(dmg>700)sfx('hurt',null,clamp(dmg/1400,.3,.8))}
- if(m.ai&&by&&by!==m&&by.alive&&Math.random()<.5)m.ai.target=by;
+ if(by&&by!==m){m.lastAtk=by;m.lastAtkT=game.time}
+ if(m.ai&&by&&by!==m&&by.alive&&Math.random()<(m.ai.type.id==='warden'?1:.5))m.ai.target=by;
  // locational damage
  const loc=opt.loc&&!m.parts[opt.loc].lost?opt.loc:hitLoc(m,at);const P=m.parts[loc];
  P.hp-=dmg;if(P.hp<=0&&!P.lost)loseP(m,loc,by);
@@ -5307,7 +5468,75 @@ function destroy(m,by){
 // ---------------------------------------------------------------------
 // AI
 // ---------------------------------------------------------------------
-function aiThink(m,dt){aiThinkCore(m,dt);if(TEAM.on&&TEAM.mode==='cp')cpSteer(m,dt)}
+function aiThink(m,dt){aiThinkCore(m,dt);aiArchetype(m,dt);if(TEAM.on&&TEAM.mode==='cp')cpSteer(m,dt)}
+// ---- the three behaviour-driven archetypes layer their own movement over the shared fight logic
+const _aw=new V3();
+// steer toward a world direction while still facing the target (local strafe/forward from the frame's yaw)
+function aiToward(m,wx,wz,k=1){const I=m.intent,l=Math.hypot(wx,wz)||1,sy=Math.sin(m.yaw),cy=Math.cos(m.yaw),x=wx/l,z=wz/l;
+ I.mz=lerp(I.mz,x*sy+z*cy,k);I.mx=lerp(I.mx,-x*cy+z*sy,k)}
+function aiArchetype(m,dt){
+ const ai=m.ai,id=ai.type.id;if(id!=='stalker'&&id!=='charger'&&id!=='warden')return;
+ if(!m.alive||m.stagT>0||game.over)return;
+ const I=m.intent,T=ai.target;
+ if(id==='warden')return wardenThink(m,dt,T);
+ if(!T||!T.alive)return;
+ const me=m.center(tv1),tc=T.center(tv2),dx=tc.x-me.x,dz=tc.z-me.z,hd=Math.hypot(dx,dz)||1,dist=me.distanceTo(tc);
+ const gM=groundH(m.pos.x,m.pos.z);
+ if(id==='stalker'){
+  ai.stT=(ai.stT||0)-dt;if(!ai.st)ai.st='stalk';
+  const tf=_aw.set(Math.sin(T.yaw),0,Math.cos(T.yaw)),seen=(-dx*tf.x-dz*tf.z)/hd;   // >0: the target is facing us
+  const los=dist<1600&&!losBlocked(me,tc);
+  if(ai.st==='stalk'){
+   I.ab=dist>1500&&!los;I.boost=dist>700;ai.holdFire=true;   // hold fire: don't give the position away
+   // get round behind it, staying out of its view cone
+   const bx=T.pos.x-tf.x*340,bz=T.pos.z-tf.z*340;let wx=bx-m.pos.x,wz=bz-m.pos.z;
+   if(los&&seen>.55&&dist<1000){wx+=-dz/hd*500*(ai.strafe||1);wz+=dx/hd*500*(ai.strafe||1);if(ai.qbT<=0&&Math.random()<dt*1.5){I.qb=true;ai.qbT=rand(2,3.5)}}
+   aiToward(m,wx,wz,.85);
+   if(m.pos.y>gM+28){I.down=true;I.up=false}
+   if(dist<430||dist<650&&seen<.15&&los){ai.st='strike';ai.stT=rand(2.6,3.6);ai.hp0=m.hp;ai.charge=Math.max(ai.charge||0,1.2);if(ai.qbT<1.2){I.qb=true;I.mz=1;I.mx=0;ai.qbT=rand(2,3)}}
+  }else if(ai.st==='strike'){
+   ai.fireOn=true;ai.holdFire=false;ai.react=Math.max(ai.react||0,9);aiToward(m,dx,dz,.7);I.boost=true;I.ab=false;
+   if(ai.stT<=0||m.hp<ai.hp0-m.st.ap*.18){ai.st='fade';ai.stT=rand(3,4.2);ai.strafe=Math.random()<.5?1:-1}
+  }else{   // fade: break away low and sideways, then hunt again
+   ai.holdFire=true;aiToward(m,-dx/hd*.7+(-dz/hd)*ai.strafe,-dz/hd*.7+(dx/hd)*ai.strafe,.9);I.boost=true;I.ab=false;
+   if(m.pos.y>gM+28)I.down=true;
+   if(ai.stT<=0){ai.st='stalk';ai.retarget=Math.min(ai.retarget,1)}
+  }
+  return}
+ if(id==='charger'){
+  ai.jT=(ai.jT||0)-dt;if(!ai.js)ai.js='run';
+  if(ai.js==='run'){   // line up and assault-boost in
+   I.yaw=Math.atan2(dx,dz);I.mx=0;I.mz=1;I.boost=true;
+   I.ab=dist>320&&Math.abs(angDiff(m.yaw,I.yaw))<.3;
+   if(dist<300){ai.js='pass';ai.jT=1.5;ai.passYaw=m.yaw;ai.fireOn=true;ai.react=Math.max(ai.react||0,9)}
+  }else if(ai.js==='pass'){   // hold the line straight through, guns open
+   I.yaw=ai.passYaw;I.mz=1;I.mx=0;I.ab=false;I.boost=true;ai.fireOn=true;
+   if(ai.jT<=0&&dist>450){ai.js='wheel';ai.jT=rand(1.4,2.2);ai.strafe=Math.random()<.5?1:-1}
+   else if(ai.jT<=-2.5){ai.js='wheel';ai.jT=1.2}
+  }else{   // wheel: a wide boosting turn back onto it, then run again
+   I.mz=1;I.mx=ai.strafe*.8;I.boost=true;I.ab=false;
+   if(ai.jT<=0&&dist>520&&Math.abs(angDiff(m.yaw,Math.atan2(dx,dz)))<.6)ai.js='run';
+   if(ai.jT<=-4)ai.js='run'}
+ }
+}
+function wardenThink(m,dt,T){
+ const ai=m.ai,I=m.intent;
+ // pick someone to look after: the pilot if on our side, else the teammate doing the most work
+ ai.wardT=(ai.wardT||0)-dt;
+ if(TEAM.on&&(ai.wardT<=0||!ai.ward||!ai.ward.alive)){ai.wardT=rand(6,10);const mates=mechs.filter(o=>o!==m&&o.alive&&ally(o,m)&&!(o.ai&&o.ai.type.id==='warden'));
+  ai.ward=mates.includes(player)?player:mates.sort((a,b)=>(b.kills+(b.lastHitT<3?2:0))-(a.kills+(a.lastHitT<3?2:0)))[0]||null}
+ const W=TEAM.on?ai.ward:null;
+ if(W&&W.alive){
+  // stand between the ward and whoever is after it
+  const A=W.lastAtk&&W.lastAtk.alive&&game.time-W.lastAtkT<5?W.lastAtk:T&&T.alive?T:null;
+  let gx=W.pos.x,gz=W.pos.z;if(A){const ax=A.pos.x-W.pos.x,az=A.pos.z-W.pos.z,al=Math.hypot(ax,az)||1;gx+=ax/al*130;gz+=az/al*130}
+  const dx=gx-m.pos.x,dz=gz-m.pos.z,d=Math.hypot(dx,dz);
+  if(A&&A!==T){ai.target=A;ai.retarget=rand(3,5)}
+  if(d>140){aiToward(m,dx,dz,clamp((d-140)/260,.45,1));I.boost=true;if(d>600||d>480&&!(T&&T.alive&&T.pos.distanceTo(m.pos)<m.st.lock*.6)){I.yaw=Math.atan2(dx,dz);I.mz=1;I.mx=0;I.ab=Math.abs(angDiff(m.yaw,I.yaw))<.4}}
+  if(m.pos.y>W.pos.y+70)I.down=true;
+ }
+ // alone it fights as normal, but always turns on whoever hit it last (the grudge pick and retarget above)
+}
 function aiThinkCore(m,dt){
  const ai=m.ai,I=m.intent,D=ai.diff,TY=ai.type;
  ai.retarget-=dt;ai.fireT-=dt;ai.strafeT-=dt;ai.errT-=dt;ai.hopT-=dt;ai.boostT-=dt;ai.qbT-=dt;ai.altT-=dt;ai.moodT-=dt;ai.retreatCd-=dt;
@@ -5321,6 +5550,8 @@ function aiThinkCore(m,dt){
    if(ai.obj&&Math.hypot(o.pos.x-ai.obj.x,o.pos.z-ai.obj.z)<450)d*=.6;
    if(TY.pick==='weak')d*=.35+o.hp/o.st.ap;           // hunters smell blood
    else if(TY.pick==='far')d=Math.abs(d-900)+200;     // marksmen like a target already at range
+   else if(TY.pick==='busy'){const busy=o.ai?o.ai.target&&o.ai.target!==m&&o.ai.target.alive:o===player&&player.lockT&&player.lockT!==m;if(busy)d*=.5;if(o.lastHitT<2)d*=.8}   // stalkers third-party a fight already going
+   else if(TY.pick==='grudge'){if(m.lastAtk===o&&game.time-m.lastAtkT<6)d*=.25;const W=ai.ward;if(W&&W.alive){if(W.lastAtk===o&&game.time-W.lastAtkT<5)d*=.2;d=d*.5+o.pos.distanceTo(W.pos)*.5}}
    if(d<bd){bd=d;best=o}}
   ai.target=best;ai.retarget=rand(6,13);
  }
@@ -5398,7 +5629,7 @@ function aiThinkCore(m,dt){
  if(los&&inRange){if(m.lockT!==T){m.lockT=T;m.lockP=0}m.lockP=Math.min(1.2,m.lockP+dt*m.st.aim*.9)}else{m.lockP=Math.max(0,m.lockP-dt*2)}
  ai.react=los?ai.react+dt:0;
  const facing=Math.abs(angDiff(m.yaw,I.yaw))<D.fireAng;
- if(los&&facing&&ai.react>D.react&&!m.ab&&ai.fireOn){
+ if(los&&facing&&ai.react>D.react&&!m.ab&&ai.fireOn&&!ai.holdFire){
   for(const k of['r','l']){const d=m.w[k].def;if(d.type==='none')continue;
    if(d.type==='blade'){if(dist<d.range*1.5)I['f'+k]=true;continue}
    if(dist<(d.range||600))I['f'+k]=true}
@@ -5418,6 +5649,7 @@ addEventListener('keydown',e=>{
  if(TR.on){if(e.code==='Escape')trStop(false);e.preventDefault();return}
  if(e.code==='Backquote'||e.key==='~'||e.key==='`'){e.preventDefault();conToggle();return}
  if(game.state==='title'){if(!$('#trEnd').hidden&&e.code==='Escape'){show('#trEnd',false);return}leaveTitle();return}
+ if(game.state==='profiles'){if(e.code==='Escape')enterTitle();else{const d=/^Digit([1-3])$/.exec(e.code);if(d)pfPick(+d[1]-1)}return}
  if(game.state==='lineup'){if(e.code==='Space'||e.code==='Enter'||e.code==='Escape'){e.preventDefault();skipLineup()}return}
  if(game.state==='intro'){if(game.introT<CARD_T&&(e.code==='Space'||e.code==='Enter'))skipIntro();else if(e.code==='Escape'||e.code==='KeyP')setPause(true);return}
  if(game.spectate&&(game.state==='fight'||game.state==='intro')&&specKey(e))return;
@@ -5938,8 +6170,8 @@ function updateFeed(dt){for(const f of feedItems){f.t-=dt;if(f.t<=0&&f.el.parent
 const game={partMsg:null,hitStop:0,slowT:0,state:'boot',time:0,endT:0,endKind:'',introT:0,count:0};
 let garageRig=null;
 function show(id,on){$(id).hidden=!on}
-function enterTitle(){game.state='title';{const tp=$('#tPress');if(tp)tp.textContent=isTouch?'Tap to start':'Press any key'}buildHangar();titleNewFrame();viewOffset=null;applyViewOffset();show('#title',true);show('#garage',false);show('#hud',false)}
-function leaveTitle(){if(game.state!=='title')return;auInit();TITLE.on=false;$('#title').classList.add('out');setTimeout(()=>{show('#title',false);$('#title').classList.remove('out')},350);enterGarage()}
+function enterTitle(){game.state='title';{const tp=$('#tPress');if(tp)tp.textContent=isTouch?'Tap to start':'Press any key'}buildHangar();titleNewFrame();viewOffset=null;applyViewOffset();show('#title',true);show('#garage',false);show('#hud',false);show('#profiles',false)}
+function leaveTitle(){if(game.state!=='title')return;auInit();TITLE.on=false;$('#title').classList.add('out');setTimeout(()=>{show('#title',false);$('#title').classList.remove('out')},350);enterProfiles()}
 $('#toTitle').addEventListener('click',()=>{if(game.state==='garage'){openSlot=null;preview=null;enterTitle()}});
 $('#title').addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&isTouch)leaveTitle()});
 function enterGarage(){
@@ -5947,11 +6179,59 @@ function enterGarage(){
  game.state='garage';gStep='a';clearMatch();
  if(world.kind!=='hangar')buildHangar();refreshGarageRig();
  viewOffset='garage';applyViewOffset();
- show('#garage',true);show('#hud',false);show('#touch',false);show('#trEnd',false);show('#pauseBtn',false);show('#results',false);show('#pause',false);
+ show('#garage',true);show('#hud',false);show('#touch',false);show('#trEnd',false);show('#profiles',false);$('#pilotN').textContent=pfName();show('#pauseBtn',false);show('#results',false);show('#pause',false);
  $('#hud').classList.remove('dead');show('#boot',false);$('#boot').innerHTML='';$('#boot').classList.remove('out');$('#count').innerHTML='';show('#icard',false);
  if(document.pointerLockElement)document.exitPointerLock();
  renderGarage();
 }
+// ---- pilot profiles screen
+const PF_MAX=3;
+function pfList(){let L=store.get('profiles',null);if(!Array.isArray(L))L=[null,null,null];while(L.length<PF_MAX)L.push(null);return L.slice(0,PF_MAX)}
+function pfSave(L){store.set('profiles',L)}
+function pfName(){const p=pfList()[PROFILE];return p?p.name:'—'}
+function pfTouch(match){const L=pfList(),p=L[PROFILE];if(!p)return;p.last=Date.now();if(match)p.matches=(p.matches||0)+1;pfSave(L)}
+// read a profile's own saved data without switching to it
+function pfPeek(i,k,d){try{const v=localStorage.getItem(`ashfall.p${i}.${k}`);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function pfUse(i){PROFILE=i;try{localStorage.setItem('ashfall.profile',String(i))}catch(e){}loadProfileData();gTab=store.get('tab','frame');if(!TABS.some(t=>t.id===gTab))gTab='frame';undoStack.length=0;openSlot=null;preview=null;pfTouch(false)}
+function pfPick(i){const L=pfList();if(!L[i]){pfEdit=i;renderProfiles();return}pfUse(i);enterGarage()}
+let pfEdit=-1,pfDel=-1;
+const cleanName=v=>(v||'').toUpperCase().replace(/[^A-Z0-9 \-]/g,'').trim().slice(0,12);
+function enterProfiles(){game.state='profiles';pfEdit=-1;pfDel=-1;show('#garage',false);show('#profiles',true);renderProfiles()}
+function renderProfiles(){
+ const L=pfList(),G=$('#pfGrid');G.innerHTML='';
+ L.forEach((p,i)=>{const c=document.createElement('div');
+  if(p&&pfEdit!==i){const pr=pfPeek(i,'prog',{xp:0}),R=rankInfo(pr.xp||0),bd=pfPeek(i,'build',{}),lo=(pfPeek(i,'loadouts',[])||[]).filter(Boolean).length;
+   c.className='pf used'+(i===PROFILE?' cur':'');
+   c.innerHTML=`<span class="slot">PILOT 0${i+1}${i===PROFILE?' · LAST USED':''}</span><span class="nm"></span><div class="rk"><b>R${R.rank}</b><span></span></div><div class="xb"><i style="width:${R.need?R.into/R.need*100:100}%"></i></div>
+    <div class="meta"></div><div class="acts"><button class="go2">Fly as this pilot</button><button class="ghost ren">Rename</button><button class="ghost del${pfDel===i?' warn':''}">${pfDel===i?'Confirm delete':'Delete'}</button></div>`;
+   c.querySelector('.nm').textContent=p.name;c.querySelector('.rk span').textContent=R.name;
+   const ago=t=>{if(!t)return'—';const d=(Date.now()-t)/864e5;return d<1?'today':d<2?'yesterday':Math.floor(d)+' days ago'};
+   c.querySelector('.meta').innerHTML=['XP','Frame','Matches','Loadouts','Last flown'].map(k=>`${k}: <b></b>`).join('<br>');
+   [...c.querySelectorAll('.meta b')].forEach((b,j)=>b.textContent=[`${Math.round(pr.xp||0).toLocaleString('en-US')}${R.need?` · ${Math.round(R.into)}/${R.need} to R${R.rank+1}`:' · max rank'}`,bd.callsign||p.name,String(p.matches||0),`${lo} / 5 saved`,ago(p.last)][j]);
+   c.addEventListener('click',e=>{if(e.target.closest('.ren,.del'))return;pfPick(i)});
+   c.querySelector('.ren').addEventListener('click',()=>{pfEdit=i;pfDel=-1;renderProfiles()});
+   c.querySelector('.del').addEventListener('click',()=>{if(pfDel!==i){pfDel=i;renderProfiles();return}
+    for(const k of PROFILE_KEYS)try{localStorage.removeItem(`ashfall.p${i}.${k}`)}catch(e){}const M=pfList();M[i]=null;pfSave(M);pfDel=-1;renderProfiles()});
+  }else if(pfEdit===i){
+   c.className='pf empty';c.innerHTML=`<span class="slot">PILOT 0${i+1}</span><div class="hint2">${p?'Rename pilot':'Pilot name (also your frame callsign)'}</div><input maxlength="12" spellcheck="false" autocomplete="off"><div class="acts"><button class="go2">${p?'Save name':'Create pilot'}</button><button class="ghost">Cancel</button></div>`;
+   const inp=c.querySelector('input');inp.value=p?p.name:'';
+   const ok=()=>{const nm=cleanName(inp.value)||'PILOT-0'+(i+1),M=pfList();
+    if(p){M[i].name=nm;pfSave(M);pfEdit=-1;renderProfiles();return}
+    M[i]={name:nm,created:Date.now(),last:Date.now(),matches:0};pfSave(M);
+    for(const k of PROFILE_KEYS)try{localStorage.removeItem(`ashfall.p${i}.${k}`)}catch(e){}
+    try{localStorage.setItem(`ashfall.p${i}.build`,JSON.stringify(Object.assign({},DEFAULT_BUILD,{callsign:nm})))}catch(e){}
+    pfEdit=-1;pfUse(i);enterGarage()};
+   c.querySelector('.go2').addEventListener('click',ok);inp.addEventListener('keydown',e=>{if(e.key==='Enter')ok();if(e.key==='Escape'){pfEdit=-1;renderProfiles()}});
+   c.querySelector('.ghost').addEventListener('click',()=>{pfEdit=-1;renderProfiles()});
+   setTimeout(()=>inp.focus(),0);
+  }else{
+   c.className='pf empty';c.style.cursor='pointer';c.innerHTML=`<span class="slot">PILOT 0${i+1}</span><span class="plus">+</span><b>New pilot</b><span class="hint2">An empty slot. Starts at rank 1 with a standard frame.</span>`;
+   c.addEventListener('click',()=>{pfEdit=i;pfDel=-1;renderProfiles()});
+  }
+  G.appendChild(c)});
+}
+$('#pfBack').addEventListener('click',()=>enterTitle());
+$('#pilotB').addEventListener('click',()=>{if(game.state==='garage'){openSlot=null;preview=null;enterProfiles()}});
 function refreshGarageRig(b=build){
  if(garageRig)disposeRig(garageRig);
  garageRig=buildRig(b);garageRig.key=JSON.stringify(b);scene.add(garageRig.root);garageRig.root.position.set(0,.6,0);
@@ -6245,7 +6525,7 @@ function matchXP(place,n){
  return{rows,mult,total};
 }
 function awardXP(place,n,X0){
- const X=X0||matchXP(place,n),before=rankInfo(prog.xp);prog.xp+=X.total;const after=rankInfo(prog.xp);
+ const X=X0||matchXP(place,n),before=rankInfo(prog.xp);prog.xp+=X.total;const after=rankInfo(prog.xp);pfTouch(true);
  const unlocked=[];
  store.set('prog',prog);
  const el=$('#rXP'),fmt=v=>Math.round(v).toLocaleString('en-US');
@@ -6277,7 +6557,7 @@ function finishMatch(){
 // =====================================================================
 // garage UI — step 1 assembly (tabs + slot dropdowns), step 2 sortie (arena, match, deploy)
 // =====================================================================
-const TABS=[{id:'frame',label:'Frame',slots:['head','core','arms']},{id:'move',label:'Mobility',slots:['legs','booster']},{id:'arm',label:'Armament',slots:['wr','wl','sh','sh2']},{id:'paint',label:'Finish',slots:[]}];
+const TABS=[{id:'frame',label:'Frame',slots:['head','core','arms']},{id:'move',label:'Mobility',slots:['legs','booster']},{id:'arm',label:'Armament',slots:['wr','wl','sh','sh2']},{id:'paint',label:'Finish',slots:[]},{id:'loads',label:'Loadouts',slots:[]}];
 let gStep='a',gTab=store.get('tab','frame'),openSlot=null,preview=null;
 if(!TABS.some(t=>t.id===gTab))gTab='frame';
 function fmtPart(p,cat){
@@ -6301,8 +6581,8 @@ function fmtPart(p,cat){
 }
 const slotOf=k=>SLOTS.find(s=>s.k===k);
 function setStep(st){
- gStep=st;show('#scrA',st==='a');show('#scrB',st==='b');
- for(const[id,on]of[['#stepA',st==='a'],['#stepB',st==='b']]){const b=$(id);b.classList.toggle('on',on);b.setAttribute('aria-selected',on)}
+ gStep=st;show('#scrA',st==='a');show('#scrB',st==='b');show('#scrC',st==='c');
+ for(const[id,on]of[['#stepA',st==='a'],['#stepB',st==='b'],['#stepC',st==='c']]){const b=$(id);b.classList.toggle('on',on);b.setAttribute('aria-selected',on)}
  openSlot=null;preview=null;
  if(st==='a')renderAssembly();else renderSortie();
  applyViewOffset();
@@ -6319,7 +6599,8 @@ function renderAssembly(){renderRank();
  const list=$('#slotList');list.innerHTML='';
  const tab=TABS.find(t=>t.id===gTab);
  list.classList.toggle('isPaint',tab.id==='paint');
- if(tab.id==='paint'){
+ if(tab.id==='loads'){renderLoadouts(list)}
+ else if(tab.id==='paint'){
   const grid=document.createElement('div');grid.className='paintGrid';const hx=c=>'#'+c.toString(16).padStart(6,'0');
   const sec=t=>{const h=document.createElement('div');h.className='pSec';h.textContent=t;grid.appendChild(h)};
   PAINTS.forEach((p,i)=>{if(i===0)sec('Standard');if(i===22)sec('Field schemes');if(p.rank&&!PAINTS[i-1].rank)sec('Special · earned by rank');
@@ -6373,6 +6654,29 @@ function releaseInfo(){const pi=$('#partInfo');if(pi){pi.dataset.h=0;pi.style.mi
 function renderTabInfo(tab,hk,hp){
  renderInfo(tab.slots.map(k=>{const sl=slotOf(k),p=k===hk&&hp?hp:getPart(k,build[k]);
   return{label:sl.label,name:p.name,desc:p.desc+(isUnlocked(p.id)?'':` Unlocks at rank ${UNLOCK[p.id]}.`),stat:fmtPart(p,sl.cat),pv:k===hk&&hp&&build[k]!==hp.id}}));
+}
+// ---- saved loadouts: five slots per pilot, each a whole frame (parts, weapons and finish)
+const LD_N=5;
+function ldList(){let L=store.get('loadouts',[]);if(!Array.isArray(L))L=[];while(L.length<LD_N)L.push(null);return L.slice(0,LD_N)}
+const ldKey=b=>JSON.stringify(['head','core','arms','legs','booster','wr','wl','sh','sh2','paint'].map(k=>b[k]));
+function ldValid(b){return b&&['head','core','arms','legs','booster','wr','wl','sh','sh2'].every(k=>PARTS[catOf(k)].some(p=>p.id===b[k]))}
+function renderLoadouts(list){
+ const L=ldList(),box=document.createElement('div');box.className='ldList';const curK=ldKey(build);
+ L.forEach((ld,i)=>{const c=document.createElement('div');const same=ld&&ldKey(ld.build)===curK;c.className='ld'+(ld?'':' empty')+(same?' cur':'');
+  c.innerHTML=`<div class="lh"><i>0${i+1}</i><input maxlength="20" spellcheck="false" autocomplete="off"></div><div class="ls"></div><div class="la"><button class="ldLoad">Load</button><button class="ghost ldSave">${ld?'Overwrite':'Save current'}</button></div>`;
+  const inp=c.querySelector('input');inp.value=ld?ld.name:'Empty slot';inp.disabled=!ld;
+  const P=k=>ld?getPart(k,ld.build[k]).name:'';
+  c.querySelector('.ls').textContent=ld?`${P('wr')} · ${P('wl')} · ${P('sh')}${ld.build.sh2&&ld.build.sh2!=='none'?' + '+P('sh2'):''}\n${P('legs')} · ${computeStats(ld.build).ap} AP · ${PAINTS[ld.build.paint]?PAINTS[ld.build.paint].name:''}${same?' · EQUIPPED':''}`:'Save your current frame here to come back to it later.';
+  c.querySelector('.ls').style.whiteSpace='pre-line';
+  const ldB=c.querySelector('.ldLoad');ldB.disabled=!ld||same;
+  ldB.addEventListener('click',()=>{if(!ld||!ldValid(ld.build))return;undoStack.push(Object.assign({},build));build=Object.assign({},DEFAULT_BUILD,ld.build,{callsign:build.callsign});
+   if(paintLocked(build.paint))build.paint=0;store.set('build',build);openSlot=null;preview=null;refreshGarageRig();$('#undoBtn').disabled=false;renderAssembly()});
+  c.querySelector('.ldSave').addEventListener('click',()=>{const M=ldList();const nb=Object.assign({},build);delete nb.callsign;M[i]={name:ld?ld.name:`${getPart('wr',build.wr).name.split(' ').pop()} ${getPart('legs',build.legs).name.split(' ').pop()}`.toUpperCase().slice(0,20),build:nb,saved:Date.now()};store.set('loadouts',M);renderAssembly()});
+  inp.addEventListener('change',()=>{const M=ldList();if(!M[i])return;M[i].name=(inp.value||'').trim().slice(0,20)||'LOADOUT '+(i+1);store.set('loadouts',M)});
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')inp.blur()});
+  box.appendChild(c)});
+ list.appendChild(box);
+ renderInfo([{label:'Loadouts',name:'Saved frames',desc:'Keep up to five complete frames (parts, weapons and finish) per pilot. Save the current frame into a slot, click a name to rename it, and Load to put it back on. Loading can be undone with Undo.'}]);
 }
 function renderInfo(items){
  const el=$('#partInfo');el.innerHTML='';
@@ -6438,7 +6742,7 @@ function captureThumbs(){
  // back to the hangar
  buildHangar();if(garageRig)garageRig.root.visible=true;
  camera.position.copy(keep.pos);camera.fov=keep.fov;camera.aspect=keep.aspect;camera.updateProjectionMatrix();applyViewOffset();
- thumbBusy=false;if(gStep==='b')renderSortie();
+ thumbBusy=false;if(gStep==='b'||gStep==='c')renderSortie();
 }
 function renderSortie(){
  const ar=$('#arenas');ar.innerHTML='';
@@ -6447,14 +6751,23 @@ function renderSortie(){
   b.innerHTML=`<span class="th">${THUMBS[a.id]?`<img alt="" src="${THUMBS[a.id]}">`:(ARENA_ART[a.id]||'<span class="thWait">Surveying…</span>')}</span><b></b><p></p><span class="chips">${a.facts.map(f=>`<span class="chip">${f}</span>`).join('')}</span>`;
   b.querySelector('b').textContent=a.name;b.querySelector('p').textContent=a.desc;
   b.addEventListener('click',()=>{match.arena=a.id;store.set('match',match);renderSortie()});ar.appendChild(b)}
+ {const a=ARENAS.find(x=>x.id===match.arena),art=THUMBS[a.id]?`<img alt="" src="${THUMBS[a.id]}">`:(ARENA_ART[a.id]||'');
+  $('#selName').textContent=a.name;$('#selTag').textContent=a.tag;
+  const pk=$('#arenaPick');pk.innerHTML=`<span class="th">${art}</span><b></b><small></small><button>Change arena</button>`;pk.querySelector('b').textContent=a.name;pk.querySelector('small').textContent=a.tag;pk.querySelector('button').addEventListener('click',()=>setStep('b'));
+  $('#modeNext').textContent='Current: '+MODES.find(x=>x.id===modeOf()).name;}
  const md=modeOf(),team=md!=='ffa',sv=()=>{store.set('match',match)};
- seg('#mode',MODES.map(x=>({v:x.id,l:x.name})),md,v=>{match.mode=v;sv();renderSortie()});
+ {const MC=$('#mode');MC.innerHTML='';const SUB={ffa:'Solo',tdm:'Teams',cp:'Teams · objectives'};
+  const DESC={ffa:'Every frame for itself. 1–8 opponents, limited lives, most kills wins.',tdm:'Two to four teams, up to 12 frames. Every enemy destroyed scores for your side. Unlimited redeploys.',cp:`Two teams fight over ${match.team<=3?3:5} control points. Hold the majority to drain the enemy's tickets.`};
+  for(const x of MODES){const b=document.createElement('button');b.className='mcard'+(x.id===md?' on':'');b.setAttribute('aria-pressed',x.id===md);b.innerHTML='<em></em><b></b><span></span>';b.querySelector('em').textContent=SUB[x.id];b.querySelector('b').textContent=x.name;b.querySelector('span').textContent=DESC[x.id];
+   b.addEventListener('click',()=>{match.mode=x.id;sv();renderSortie()});MC.appendChild(b)}}
  seg('#view',[{v:false,l:'Fight'},{v:true,l:'Spectate'}],!!match.spectate,v=>{match.spectate=v;sv();renderSortie()});
- $('#modeNote').textContent=({ffa:'Every frame for itself. Most kills wins.',tdm:`${match.teams===2?'Two':match.teams===3?'Three':'Four'} teams${match.teams>2?', each from its own base round the map':''}. Every enemy destroyed scores for your side. Unlimited redeploys and no friendly fire.`,
-  cp:`Two teams fight over ${match.team<=3?3:5} control points. Hold more than the enemy to drain their tickets; every death costs one too. Redeploy at your base or any point you hold.`})[md]+(match.spectate?' Spectating: watch the frames fight it out without you.':'');
+ $('#modeNote').textContent=match.spectate?'Spectating: watch the frames fight it out without you.':'';const _unusedNote=({ffa:'Every frame for itself. Most kills wins.',tdm:`${match.teams===2?'Two':match.teams===3?'Three':'Four'} teams${match.teams>2?', each from its own base round the map':''}. Every enemy destroyed scores for your side. Unlimited redeploys and no friendly fire.`,
+  cp:`Two teams fight over ${match.team<=3?3:5} control points. Hold more than the enemy to drain their tickets; every death costs one too. Redeploy at your base or any point you hold.`})[md];
  const nT=md==='tdm'?match.teams:2;if(team&&match.team*nT>TEAM_MAX)match.team=Math.floor(TEAM_MAX/nT);
- show('#tcSect',md==='tdm');
+ // the same rows in the same places for every mode; settings a mode doesn't use show their fixed value, greyed
  if(md==='tdm')seg('#tcount',[2,3,4].map(n=>({v:n,l:n+' teams'})),match.teams,v=>{match.teams=v;match.team=Math.min(match.team,Math.floor(TEAM_MAX/v));sv();renderSortie()});
+ else seg('#tcount',[{v:0,l:md==='ffa'?'None · every frame for itself':'2 teams'}],0,()=>{});
+ $('#tcount').classList.toggle('fixed',md!=='tdm');
  $('#oppLbl').textContent=team?'Team size':match.spectate?'Frames':'Opponents';
  if(team)seg('#opp',[2,3,4,5,6].filter(n=>n*nT<=TEAM_MAX).map(n=>({v:n,l:teamLabel(nT,n)})),match.team,v=>{match.team=v;sv();renderSortie()});
  else seg('#opp',[1,2,3,4,5,6,7,8].map(n=>({v:n,l:String(match.spectate?n+1:n)})),match.opp,v=>{match.opp=v;sv();updateDeploy()});
@@ -6495,6 +6808,9 @@ $('#undoBtn').addEventListener('click',()=>{
 });
 $('#stepA').addEventListener('click',()=>setStep('a'));
 $('#stepB').addEventListener('click',()=>setStep('b'));
+$('#stepC').addEventListener('click',()=>setStep('c'));
+$('#toMode').addEventListener('click',()=>setStep('c'));
+$('#toArena').addEventListener('click',()=>setStep('b'));
 $('#toSortie').addEventListener('click',()=>setStep('b'));
 $('#toAssembly').addEventListener('click',()=>setStep('a'));
 $('#callsign').addEventListener('input',e=>{build.callsign=e.target.value.toUpperCase().replace(/[^A-Z0-9 \-]/g,'').slice(0,12)||'ASH-01';store.set('build',build)});
