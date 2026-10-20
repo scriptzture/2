@@ -63,6 +63,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
 #title .press{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);text-align:center;font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--signal);font-weight:600;animation:blink 1.2s 1.1s infinite both}
 #title .trBtns{position:absolute;top:calc(env(safe-area-inset-top,0px) + 18px);right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:2}
 .trB{font-family:var(--f-ui);font-size:11.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:rgba(8,9,11,.55);border:1px solid var(--line);padding:8px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+#trSong{display:flex;border:1px solid var(--line);background:rgba(8,9,11,.55)}#trSong button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font-family:var(--f-ui);color:var(--dim);background:none;border:0;border-right:1px solid var(--line);padding:6px 11px;cursor:pointer;text-align:left}#trSong button:last-child{border-right:0}#trSong button b{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}#trSong button small{white-space:nowrap;font-size:9.5px;letter-spacing:.1em;opacity:.7}#trSong button:hover{color:var(--paper)}#trSong button.on{background:var(--paper);color:var(--void)}
 #trSty{display:flex;border:1px solid var(--line);background:rgba(8,9,11,.55)}#trSty button{font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);background:none;border:0;padding:8px 11px;cursor:pointer}#trSty button:hover{color:var(--paper)}#trSty button.on{color:var(--paper);background:var(--deep);box-shadow:inset 0 -2px 0 var(--signal)}
 @media (max-width:640px){#title .trBtns{flex-wrap:wrap;justify-content:flex-end;left:16px}}
 .trB:hover{border-color:var(--signal);background:var(--deep)}.trB.rec{color:var(--hot)}
@@ -602,9 +603,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
     <div class="card big">ASHES FALL</div>
     <div><div class="rule"></div><div class="card sub"><span>ASSAULT FRAME WARFARE</span></div></div>
   </div>
-  <div class="trBtns" hidden><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
+  <div class="trBtns" hidden><div id="trSong"></div><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0385 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0386 · 2026.10.20</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
 <div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
@@ -1196,7 +1197,8 @@ const dofShader=dir=>({uniforms:{tDiffuse:{value:null},tDepth:{value:DOF.depthRT
 const dofH=new THREE.ShaderPass(dofShader(1)),dofV=new THREE.ShaderPass(dofShader(0));dofH.enabled=dofV.enabled=false;
 composer.addPass(dofH);composer.addPass(dofV);
 function renderDofDepth(){
- if(!(DOF.amt>.01)){dofH.enabled=dofV.enabled=false;return}
+ const need=DOF.amt>.01,trd=trFx.enabled;
+ if(!need){dofH.enabled=dofV.enabled=false;if(!trd)return}
  const w=Math.max(2,Math.floor(renderer.domElement.width/2)),h=Math.max(2,Math.floor(renderer.domElement.height/2));
  if(DOF.depthRT.width!==w||DOF.depthRT.height!==h)DOF.depthRT.setSize(w,h);
  // glow, light cones and particles shouldn't count as surfaces
@@ -1204,7 +1206,8 @@ function renderDofDepth(){
  const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;const bg=scene.background;scene.background=null;
  renderer.getClearColor(DOF.cc||(DOF.cc=new THREE.Color()));const ca=renderer.getClearAlpha();scene.overrideMaterial=DOF.mat;renderer.setRenderTarget(DOF.depthRT);renderer.setClearColor(0xffffff,1);renderer.clear();renderer.render(scene,camera);
  scene.overrideMaterial=null;renderer.setRenderTarget(null);renderer.setClearColor(DOF.cc,ca);scene.background=bg;renderer.shadowMap.autoUpdate=au;for(const o of hid)o.visible=true;
- for(const P of[dofH,dofV]){const U=P.uniforms;P.enabled=true;U.tDepth.value=DOF.depthRT.texture;U.focus.value=DOF.focus;U.ramp.value=Math.max(9,DOF.focus*1.1);U.maxR.value=17*DOF.amt*(renderer.domElement.height/900);U.texel.value.set(1/renderer.domElement.width,1/renderer.domElement.height);U.cn.value=camera.near;U.cf.value=camera.far}
+ if(trd){const U=trFx.uniforms;U.tDepth.value=DOF.depthRT.texture;U.cn.value=camera.near;U.cf.value=camera.far}
+ if(need)for(const P of[dofH,dofV]){const U=P.uniforms;P.enabled=true;U.tDepth.value=DOF.depthRT.texture;U.focus.value=DOF.focus;U.ramp.value=Math.max(9,DOF.focus*1.1);U.maxR.value=17*DOF.amt*(renderer.domElement.height/900);U.texel.value.set(1/renderer.domElement.width,1/renderer.domElement.height);U.cn.value=camera.near;U.cf.value=camera.far}
 }
 const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.85,.45,.74);
 composer.addPass(bloom);
@@ -1216,6 +1219,18 @@ const gradePass=new THREE.ShaderPass({uniforms:{tDiffuse:{value:null}},
   'float s=1.-smoothstep(0.,.45,l);c+=vec3(-.012,-.002,.016)*s;c*=mix(vec3(1.),vec3(1.03,1.,.96),smoothstep(.45,1.,l));'+
   'vec2 q=vUv-.5;c*=1.-.32*pow(length(q)*1.3,2.6);gl_FragColor=vec4(c,1.);}'});
 composer.addPass(gradePass);
+// trailer lens (motion and zoom blur, fringe, grain, grade); only on while a trailer runs
+const trFxShader={uniforms:{tDiffuse:{value:null},tDepth:{value:null},rot:{value:new THREE.Vector2()},trv:{value:new THREE.Vector2()},res:{value:new THREE.Vector2(1920,1080)},df:{value:30},zoom:{value:0},ca:{value:1},grain:{value:.05},time:{value:0},sat:{value:1},con:{value:1},useDepth:{value:0},cn:{value:1},cf:{value:22000},lift:{value:new THREE.Vector3()},gain:{value:new THREE.Vector3(1,1,1)}},
+ vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:'#include <packing>\nuniform sampler2D tDiffuse,tDepth;uniform vec2 rot,trv,res;uniform float df,zoom,ca,grain,time,sat,con,useDepth,cn,cf;uniform vec3 lift,gain;varying vec2 vUv;'+
+  'float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}'+
+  'void main(){vec2 v=rot;if(useDepth>.5){float d=unpackRGBAToDepth(texture2D(tDepth,vUv));float z=max(1.,-perspectiveDepthToViewZ(d,cn,cf));v+=trv/z*smoothstep(.15,.55,abs(1.-df/z));}'+
+  'v+=(vUv-.5)*res*zoom;float L=length(v);if(L>90.)v*=90./L;'+
+  'vec2 q=vUv-.5;vec2 cs=q*ca*.0025*dot(q,q)*4.;vec3 acc=vec3(0.);'+
+  'for(int i=0;i<12;i++){float t=float(i)/11.-.5;vec2 uv=vUv+v*t/res;acc.r+=texture2D(tDiffuse,uv+cs).r;acc.g+=texture2D(tDiffuse,uv).g;acc.b+=texture2D(tDiffuse,uv-cs).b;}'+
+  'vec3 c=acc/12.;float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,sat);c=(c-.5)*con+.5;c=c*gain+lift;'+
+  'c+=(hash(vUv*res+fract(time*7.31)*311.)-.5)*grain;gl_FragColor=vec4(max(c,0.),1.);}'};
+const trFx=new THREE.ShaderPass(trFxShader);trFx.enabled=false;composer.addPass(trFx);
 
 const hemi=new THREE.HemisphereLight(0xffffff,0x333333,.5);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,1);sun.castShadow=true;scene.add(sun);scene.add(sun.target);
@@ -7230,95 +7245,161 @@ function frame(now){
 }
 
 // =====================================================================
-// trailer: real AI battles cut to BUCKROT by a beat-locked director; optional capture to a WebM
+// trailer: real AI battles cut to music by a beat-locked director; optional capture to a WebM
 // =====================================================================
-const TR_SONG='buckrot-trailer.mp3',TR_BT=60/161.5,TR_PH=.005,TR_END=31.35;
-const trB=k=>TR_PH+k*TR_BT;
-// [beat, shot, options] — a shot lasts until the next entry. 0–36 build on Iron Spine, 36–40 black cards (arena swap), 40 the drop on Red Gorge, 80 the title
-// three cuts of the same song. Every style keeps the song's anchors: the dip (beat 36, arena swap), the drop (40) and the title (80)
-// [beat, shot, options] — a shot lasts until the next entry
+// the songs, measured offline: tempo, the time of beat 0 in the file. The cut plays beats [start,end): a build to the drop,
+// the action to the title, the title over the tail (the music fades under it). Every song's drop sits on a downbeat.
+// A: per-beat attack, E: per-beat loudness (0–9) over the cut — accents steer the cuts and kicks, loudness the pace
+const TR_SONGS={
+ buckrot:{name:'Buckrot',sub:'Promo · 31 s',file:'buckrot-trailer.mp3',bpm:160,b0:.3515,start:-1,drop:38,title:78,end:82.9,
+  A:'198993332212302525431444432231122533120012122112342216112213311125320414321220113522',E:'000022235434424277764643555645435543424588786778887867898878677888787758887867786520'},
+ measured:{name:'Measured March',sub:'64 s',file:'measured-march.mp3',bpm:99.83,b0:.1127,start:0,drop:16,title:96,end:104,
+  A:'21100000320000009165743292655411489878887798777533576765455665433445777455777665465435555557665523355657',E:'55310011543011129654323476444455766666677666666776665666666666778777767776666667777776676666677787777777'},
+ desert:{name:'Desert Watch',sub:'71 s',file:'desert-watch.mp3',bpm:98.01,b0:.2551,start:214,drop:246,title:322,end:330,
+  A:'11432122214442422144424442546465335985779469856665588568877894663255524363454243223452323234645531445446403231542020',E:'85566555744654548557644475433334854663456446647787666566875675678766766676667556866775658657755697777666866654355443'},
+ shadow:{name:'Shadow March',sub:'65 s',file:'shadow-march.mp3',bpm:104.07,b0:.2883,start:178,drop:206,title:282,end:290,
+  A:'3333434520434233322322221039914681499475213431324233424334453224316140435134423321354455444532332245433211121100',E:'6666666676666666766777788753766476627667888888878888888887878788757777897445667787677777777777778777777787788788'}};
+// three directors: pace (shot lengths in seconds, build / action), transitions, speed ramps, the grade
 const TR_STYLES={
- action:{name:'Action',kick:1,downOnly:false,flash:1,buildTs:.78,drop:[.28,4],killTs:.35,autoKill:true,filter:'',
-  shots:[[0,'reveal'],[8,'tele'],[16,'dolly'],[20,'orbit'],[24,'crane'],[28,'ots'],[30,'flyby'],[31,'top'],[32,'push'],
-   [36,'card',{text:'SEVEN FRAMES.'}],[38,'card',{text:'ONE WALKS AWAY.'}],
-   [40,'whip',{drop:1}],[44,'missile'],[48,'dolly'],[50,'tele'],[52,'flyby'],[56,'top'],[58,'dutch'],
-   [60,'ots'],[61,'card',{text:'LOCK ON.',hard:1}],[62,'low'],[63,'card',{text:'OPEN FIRE.',hard:1}],[64,'crane'],[66,'card',{text:'SURVIVE.',hard:1}],[67,'whip'],
-   [68,'push',{kill:1}],[72,'missile'],[74,'low'],[76,'whip',{slow:.5}],[78,'tele'],[80,'title']],
-  subs:[[16,24,'BUILD A FRAME.'],[24,32,'ENTER THE ARENA.'],[32,36,'NO TEAMS. NO ALLIES.']]},
- // long, weighty shots, deep slow motion, soft cards, kicks only on the bar
- cinematic:{name:'Cinematic',kick:.4,downOnly:true,flash:.55,buildTs:.6,drop:[.16,8],killTs:.22,autoKill:true,filter:'contrast(1.06) saturate(.88)',
-  shots:[[0,'reveal'],[12,'tele'],[20,'dolly'],[24,'orbit'],[30,'crane'],
-   [36,'card',{text:'WALK OUT ALONE.'}],
-   [40,'crane',{drop:1}],[48,'tele'],[52,'push',{kill:1}],[56,'orbit'],[60,'flyby'],[64,'dutch'],[66,'ots'],[68,'push',{kill:1}],[72,'tele'],[76,'whip',{slow:.4}],[80,'title']],
-  subs:[[8,20,'BUILD A FRAME.'],[20,30,'ENTER THE ARENA.']]},
- // a handful of held frames, no text but the title, no flash or shake, muted colour
- minimal:{name:'Minimal',kick:0,downOnly:true,flash:0,buildTs:.7,drop:[.5,6],killTs:.5,autoKill:false,filter:'saturate(.5) contrast(1.05)',minTitle:true,
-  shots:[[0,'reveal'],[16,'tele'],[28,'push'],[36,'card',{text:''}],[40,'tele',{drop:1}],[52,'orbit'],[62,'tele'],[70,'crane'],[80,'title']],
-  subs:[]}};
+ action:{name:'Action',kick:1,flash:1,buildTs:.8,drop:[.25,6],killTs:.33,autoKill:true,whip:.2,flashCut:.2,dip:0,ramp:.16,hand:.25,
+  grade:{lift:[0,.004,.012],gain:[1.05,1,.94],sat:1.12,con:1.08},grain:.045,ca:1},
+ cinematic:{name:'Cinematic',kick:.35,flash:.6,buildTs:.62,drop:[.15,10],killTs:.22,autoKill:true,whip:.12,flashCut:0,dip:.22,ramp:.25,hand:.55,
+  grade:{lift:[.004,.008,.018],gain:[1.04,.99,.92],sat:.9,con:1.1},grain:.065,ca:.75},
+ minimal:{name:'Minimal',kick:0,flash:0,buildTs:.7,drop:[.45,8],killTs:.5,autoKill:false,whip:0,flashCut:0,dip:.4,ramp:0,hand:.35,minTitle:true,
+  grade:{lift:[.012,.012,.014],gain:[.98,.98,.98],sat:.5,con:1.06},grain:.06,ca:.4}};
+const TR_RHY={
+ action:{build:[[4,.35],[6,.25],[8,.4]],act:[[1,.18],[2,.42],[3,.08],[4,.24],[6,.08]]},
+ cinematic:{build:[[6,.3],[8,.5],[12,.2]],act:[[3,.15],[4,.45],[6,.25],[8,.15]]},
+ minimal:{build:[[8,.5],[12,.3],[16,.2]],act:[[6,.3],[8,.5],[12,.2]]}};
+const TR_POOL={
+ action:{build:['aerial','tele','dolly','crane','track','hero','rack','spiral'],act:['track','orbit','ots','flyby','missile','chase','low','push','dutch','top','snap','duel','whip','crane','spiral','tele']},
+ cinematic:{build:['aerial','tele','dolly','crane','hero','rack','track'],act:['tele','push','orbit','flyby','crane','track','duel','rack','hero','dutch','spiral','low']},
+ minimal:{build:['tele','aerial','hero','dolly'],act:['tele','orbit','crane','track','hero','rack','aerial']}};
+const TR_TEXT={
+ subs:{action:[['BUILD A FRAME.','ENTER THE ARENA.','WALK OUT ALONE.'],['FORGED IN STEEL.','BURNED IN ASH.','ONLY ONE WALKS AWAY.'],['CHOOSE YOUR FRAME.','CHOOSE YOUR WAR.','LEAVE NOTHING STANDING.']],
+  cinematic:[['BUILD A FRAME.','ENTER THE ARENA.'],['FROM THE ASH,','A NEW WAR.'],['EVERY FRAME','HAS A PILOT.']],minimal:[[]]},
+ pre:[['SEVEN FRAMES.','ONE WALKS AWAY.'],['NO RETREAT.','NO MERCY.'],['STEEL.','FIRE.'],['BUILD IT.','BREAK THEM.']],
+ cine:['WALK OUT ALONE.','ONLY ONE RETURNS.','THE ASH REMEMBERS.'],
+ mid:[['LOCK ON.','OPEN FIRE.','SURVIVE.'],['AIM.','FIRE.','ENDURE.'],['BOOST.','STRIKE.','OVERRIDE.']],
+ midc:['NO RETREAT.','THE SKY BURNS.','HOLD THE LINE.','NOTHING LEFT STANDING.']};
+// where the battles are filmed: a scenic build, then the fights, each with its own time and weather
+const TR_LOCS={
+ build:[{a:'peaks',c:[0,1],ring:520},{a:'ice',c:[1,0],ring:420},{a:'hills',c:[0,0],ring:420},{a:'pines',c:[1,0],ring:380},{a:'rigs',c:[1,0],ring:360},{a:'basin',c:[0,0],ring:420},{a:'port',c:[1,0],ring:380}],
+ act:[{a:'canyon',c:[0,0],ring:230},{a:'grid',c:[0,1],ring:260},{a:'ruin',c:[0,1],ring:260},{a:'foundry',c:[0,0],ring:280},{a:'port',c:[1,0],ring:300},{a:'dock',c:[2,0],ring:260},{a:'basin',c:[0,2],ring:300},{a:'canyon',c:[1,2],ring:240}]};
 let trStyle=store.get('trStyle','action');if(!TR_STYLES[trStyle])trStyle='action';
-let TR_SHOTS=TR_STYLES[trStyle].shots,TR_SUBS=TR_STYLES[trStyle].subs,TRS=TR_STYLES[trStyle];
-function trSetStyle(k){if(!TR_STYLES[k])return;trStyle=k;TRS=TR_STYLES[k];TR_SHOTS=TRS.shots;TR_SUBS=TRS.subs;store.set('trStyle',k);document.querySelectorAll('#trSty button').forEach(b=>b.classList.toggle('on',b.dataset.s===k))}
+let trSongId=store.get('trSong','buckrot');if(!TR_SONGS[trSongId])trSongId='buckrot';
+let TRS=TR_STYLES[trStyle],TSONG=TR_SONGS[trSongId],TR_BT=60/TSONG.bpm;
+const trB=k=>TSONG.b0+k*TR_BT,trAt=b=>(+TSONG.A[b-TSONG.start]||0)/9,trEn=b=>(+TSONG.E[b-TSONG.start]||0)/9,trDown=b=>((b-TSONG.drop)%4+4)%4===0,trHalf=b=>((b-TSONG.drop)%2+2)%2===0;
+function trSetStyle(k){if(!TR_STYLES[k])return;trStyle=k;TRS=TR_STYLES[k];store.set('trStyle',k);document.querySelectorAll('#trSty button').forEach(b=>b.classList.toggle('on',b.dataset.s===k))}
+function trSetSong(k){if(!TR_SONGS[k])return;trSongId=k;TSONG=TR_SONGS[k];TR_BT=60/TSONG.bpm;store.set('trSong',k);document.querySelectorAll('#trSong button').forEach(b=>b.classList.toggle('on',b.dataset.g===k))}
+const trPickA=L=>L[Math.floor(Math.random()*L.length)];
+// ---- the plan: every run is a new edit of the same song structure
+function trPlan(){
+ const s=TSONG,st=TRS,sty=trStyle,bt=TR_BT,P={shots:[],subs:[],locs:[],dips:[]};
+ let last=null,last2=null,lastMis=-9;
+ const pickKind=pool=>{let k;for(let t=0;t<24;t++){k=trPickA(pool);if(k!==last&&k!==last2&&!(k==='missile'&&P.shots.length-lastMis<5))break}if(k==='missile')lastMis=P.shots.length;last2=last;last=k;return k};
+ const tin=(b,sec)=>{if(sec==='build')return st.dip&&Math.random()<st.dip*.8?'dip':'cut';const r=Math.random();return r<st.whip?'whip':st.flashCut&&trAt(b)>.7&&r<st.whip+st.flashCut?'flash':st.dip&&r<st.whip+st.dip?'dip':'cut'};
+ const push=(b,k,o={})=>{P.shots.push([b,k,o]);if(o.tin==='dip')P.dips.push(trB(b))};
+ const unit=bt<.45?2:1;   // a fast song counts in pairs of beats so the cuts keep a human pace
+ const fill=(b0,b1,sec,first,fo)=>{let b=b0,i=0;
+  while(b<b1){const k=i===0&&first?first:pickKind(TR_POOL[sty][sec]);
+   // shot lengths come from a rhythm table: loud passages favour short cuts, quiet ones hold
+   const e=sec==='act'?clamp((trEn(b)-.45)/.45,0,1):.5,W=TR_RHY[sty][sec].map(([n,w])=>[n,w*(sec!=='act'?1:n<=2?.4+e*1.2:1.3-e*.6)]);
+   let r=Math.random()*W.reduce((a,x)=>a+x[1],0),n=W[0][0];for(const[nn,w]of W){if((r-=w)<=0){n=nn;break}}n*=unit;n=Math.max(1,Math.min(n,Math.floor(({action:4.2,cinematic:6.6,minimal:9})[sty]/bt)));
+   let end=b+n,best=end,bs=-1e9;const g=n>=4?Math.min(2,unit):n>=2?1:0;
+   // nudge the cut onto a downbeat or a hit next to it
+   for(let c=Math.max(b+1,end-g);c<=end+g;c++){if(c>b1)break;const sc=(trDown(c)?1.2:trHalf(c)?.5:0)+trAt(c)*1.4-Math.abs(c-end)*.9;if(sc>bs){bs=sc;best=c}}
+   end=Math.min(best,b1);if(b1-end>0&&(b1-end)*bt<.55)end=b1;
+   const o=Object.assign({tin:i===0&&fo&&fo.tin?fo.tin:tin(b,sec)},i===0?fo:null);
+   if(sec==='act'&&st.ramp&&!o.drop&&(end-b)*bt>1.1&&Math.random()<st.ramp)o.ramp=1;
+   push(b,k,o);b=end;i++}};
+ const locB=trPickA(TR_LOCS.build),acts=TR_LOCS.act.filter(l=>l.a!==locB.a).sort(()=>Math.random()-.5);
+ P.locs.push({b:s.start,loc:locB});
+ const cardAt=s.drop-4;
+ fill(s.start,cardAt,'build',Math.random()<.6?'reveal':'aerial',{tin:'cut'});
+ // the dip before the drop: black cards, and the arena changes underneath
+ if(sty==='action'){const pr=trPickA(TR_TEXT.pre);push(cardAt,'card',{text:pr[0]});push(cardAt+2,'card',{text:pr[1]})}
+ else push(cardAt,'card',{text:sty==='cinematic'?trPickA(TR_TEXT.cine):''});
+ P.locs.push({b:cardAt,loc:acts[0]});
+ // the action, with a mid-point break (and a third arena) when the song gives it room
+ const actLen=s.title-s.drop,dropShot=sty==='action'?'whip':sty==='cinematic'?'crane':'tele';
+ let mid=0;if(actLen*bt>=14)mid=s.drop+Math.max(8,Math.round(actLen*.52/4)*4);
+ if(mid){
+  fill(s.drop,mid,'act',dropShot,{drop:1,tin:'cut'});
+  if(sty==='action'){const t=trPickA(TR_TEXT.mid);push(mid,'card',{text:t[0],hard:1});push(mid+1,'low',{tin:'cut'});push(mid+2,'card',{text:t[1],hard:1});push(mid+3,'crane',{tin:'cut'});push(mid+4,'card',{text:t[2],hard:1});
+   if(actLen*bt>=26)P.locs.push({b:mid,loc:acts[1]});fill(mid+5,s.title,'act','push',{kill:1,tin:'flash'})}
+  else{push(mid,'card',{text:sty==='cinematic'?trPickA(TR_TEXT.midc):''});if(actLen*bt>=26)P.locs.push({b:mid,loc:acts[1]});fill(mid+4,s.title,'act',sty==='cinematic'?'aerial':'tele',{tin:'dip'})}}
+ else fill(s.drop,s.title,'act',dropShot,{drop:1,tin:'cut'});
+ // the last shot before the title lingers in slow motion
+ {const L=P.shots[P.shots.length-1];if(L&&L[1]!=='card'&&sty!=='minimal'){L[2].slow=sty==='action'?.5:.4;delete L[2].ramp}}
+ push(s.title,'title',{tin:'cut'});
+ // lines in the lower bar over the second half of the build
+ const lines=trPickA(TR_TEXT.subs[sty]);if(lines.length){const a0=s.start+Math.round((cardAt-s.start)*.4),span=(cardAt-a0)/lines.length;lines.forEach((t,i)=>P.subs.push([a0+Math.round(i*span),a0+Math.round((i+1)*span),t]))}
+ return P}
 // flashy, varied loadouts; legs and frame parts are re-rolled until the build fits
 const TR_KITS=[{legs:'lg_hft',wr:'torch',wl:'gatling',sh:'missiles',sh2:'missiles'},{legs:'lg_tk',wr:'napalm',wl:'bazooka',sh:'fae',sh2:'none'},{legs:'lg_qd',wr:'rifle',wl:'hound',sh:'swarm',sh2:'quadm'},
  {legs:'lg_rj',wr:'gatling',wl:'cleaver',sh:'salvo',sh2:'none'},{legs:'lg_trd',wr:'bazooka',wl:'shotgun',sh:'cluster',sh2:'javelin'},{legs:'lg_inf',wr:'pulse',wl:'twinfang',sh:'plasma',sh2:'beam'},{legs:'lg_gar',wr:'lancer',wl:'grenade',sh:'mortar',sh2:'fae'}];
-const TR={on:false,rec:false,S:0,seg:0,shot:-1,sh:null,ts:1,fade:1,flash:0,kick:0,beat:-1,lastKill:null,cv:null,cx:null,el:null,mr:null,chunks:[],dest:null,keep:null,url:null,lift:0,sc:new V3(),f:new V3(0,0,1),pre:0};
+const TR={on:false,rec:false,S:0,shot:-1,sh:null,ts:1,fade:1,flash:0,kick:0,beat:-1,lastKill:null,cv:null,cx:null,el:null,mr:null,chunks:[],dest:null,keep:null,url:null,lift:0,sc:new V3(),f:new V3(0,0,1),pre:0,plan:null,li:0,zk:0,pp:new V3(),pf:new V3(),pfov:50,pv:false};
 function trKit(k){
  const has=(cat,id)=>PARTS[cat].some(p=>p.id===id),mid=cat=>PARTS[cat].filter(p=>!/_l$|_s$/.test(p.id));
  for(let t=0;t<80;t++){const b={head:pick(mid('head')).id,core:pick(mid('core')).id,arms:pick(mid('arms')).id,legs:t<40&&has('legs',k.legs)?k.legs:pick(PARTS.legs).id,booster:pick(PARTS.booster).id,
   wr:has('weapon',k.wr)?k.wr:'rifle',wl:has('weapon',k.wl)?k.wl:'gatling',sh:has('shoulder',k.sh)?k.sh:'missiles',sh2:t<60&&has('shoulder',k.sh2)?k.sh2:'none',paint:rint(22,PAINTS.length-1),callsign:''};
   if(!computeStats(b).over)return b}
  return null}
-function trSpawn(arena,ring){
+function trSpawn(loc){
  const kits=TR_KITS.slice().sort(()=>Math.random()-.5);
- match={arena,opp:6,diff:'ace',len:9999,cap:0,spectate:true,ring,builds:kits.map(trKit)};
+ match={arena:loc.a,env:{[loc.a]:loc.c},opp:6,diff:'ace',len:9999,cap:0,spectate:true,ring:loc.ring,builds:kits.map(trKit)};
  game.spectate=true;spawnMatch();setupHud();show('#hud',false);
  for(const m of mechs)m.lives=99;
  game.time=0;game.partMsg=null;game.hitStop=0;game.slowT=0;game.endT=0;game.over=false;shake=0;
- game.state='fight';TR.sh=null;TR.lastKill=null;SPEC.ev=null;
+ game.state='fight';TR.sh=null;TR.lastKill=null;SPEC.ev=null;TR.pv=false;
 }
 function trStart(rec){
  if(TR.on)return;auInit();
  TR.keep={match,vol:AU.master?AU.master.gain.value:1};
- TR.on=true;TR.rec=!!rec&&!!window.MediaRecorder;TR.S=-1.6;TR.pre=1;TR.seg=1;TR.shot=-1;TR.fade=1;TR.flash=0;TR.ts=1;TR.beat=-1;TR.chunks=[];TR.done=false;
+ TR.plan=trPlan();TR.li=0;TR.T0=Math.max(0,trB(TSONG.start));
+ TR.on=true;TR.rec=!!rec&&!!window.MediaRecorder;TR.S=TR.T0-1.6;TR.pre=1;TR.shot=-1;TR.fade=1;TR.flash=0;TR.ts=1;TR.beat=-1;TR.chunks=[];TR.done=false;TR.zk=0;TR.pv=false;
  TITLE.on=false;show('#title',false);show('#trEnd',false);if(garageRig){disposeRig(garageRig);garageRig=null}
  viewOffset=null;applyViewOffset();
  // a fixed 16:9 frame regardless of the window, so the capture is a clean 1080p (720p on low quality)
  const hi=settings.qual==='high';TR.W=hi?1920:1280;TR.H=hi?1080:720;
  renderer.setPixelRatio(1);renderer.setSize(TR.W,TR.H,false);composer.setPixelRatio&&composer.setPixelRatio(1);composer.setSize(TR.W,TR.H);camera.aspect=TR.W/TR.H;camera.updateProjectionMatrix();
  if(!TR.cv){TR.cv=$('#trc');TR.cx=TR.cv.getContext('2d')}TR.cv.width=TR.W;TR.cv.height=TR.H;TR.cx.fillStyle='#000';TR.cx.fillRect(0,0,TR.W,TR.H);
- show('#trv',true);$('#trv').classList.toggle('rec',TR.rec);
+ show('#trv',true);$('#trv').classList.toggle('rec',TR.rec);trFx.enabled=true;
  try{document.fonts&&['800 100px "Shippori Mincho B1"','700 100px "Chakra Petch"','600 30px "Chakra Petch"','30px "Share Tech Mono"'].forEach(f=>document.fonts.load(f))}catch(e){}
- // the song: through Web Audio when served (so it can be recorded), straight from the element when opened from disk
- const el=TR.el=new Audio(TR_SONG);el.preload='auto';TR.songG=null;
+ // the song: through Web Audio when served (so it can be recorded and faded), straight from the element when opened from disk
+ const el=TR.el=new Audio(TSONG.file);el.preload='auto';TR.songG=null;
+ el.addEventListener('loadedmetadata',()=>{try{if(TR.pre)el.currentTime=TR.T0}catch(e){}},{once:true});
  try{if(AU.ctx&&location.protocol!=='file:'){const s=AU.ctx.createMediaElementSource(el),g=AU.ctx.createGain();g.gain.value=.92;s.connect(g);g.connect(AU.ctx.destination);TR.songG=g;
   if(TR.rec){TR.dest=AU.ctx.createMediaStreamDestination();g.connect(TR.dest);AU.master.connect(TR.dest)}}}catch(e){TR.songG=null}
  if(!TR.songG)el.volume=.92;
  if(AU.master)AU.master.gain.value=settings.vol*.5;   // battle sound sits under the music
- trSpawn('peaks',560);
+ trSpawn(TR.plan.locs[0].loc);TR.li=1;
  PS_SCALE=TR.H/(2*Math.tan(camera.fov*Math.PI/360));for(const p of psys)p.mat.uniforms.uScale.value=PS_SCALE;
  setTimeout(()=>$('#trv').classList.add('hint'),2600);$('#trv').classList.remove('hint');
 }
 function trBeginSong(){
- TR.pre=0;TR.S=0;
+ TR.pre=0;TR.S=TR.T0;
  if(TR.rec){
   const vs=TR.cv.captureStream(60),tracks=[...vs.getVideoTracks()];if(TR.dest)tracks.push(...TR.dest.stream.getAudioTracks());
   const types=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'],mt=types.find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
   try{TR.mr=new MediaRecorder(new MediaStream(tracks),mt?{mimeType:mt,videoBitsPerSecond:TR.W>1500?16e6:9e6,audioBitsPerSecond:256e3}:{});TR.mr.ondataavailable=e=>{if(e.data&&e.data.size)TR.chunks.push(e.data)};TR.mr.onstop=trSave;TR.mr.start(250)}catch(e){console.warn('trailer: recording unavailable',e);TR.mr=null}
  }
- TR.el.currentTime=0;TR.el.play().catch(()=>{});
+ try{if(Math.abs(TR.el.currentTime-TR.T0)>.03)TR.el.currentTime=TR.T0}catch(e){}TR.el.play().catch(()=>{});
 }
 function trSave(){
  if(!TR.chunks.length)return;const type=TR.mr&&TR.mr.mimeType||'video/webm',blob=new Blob(TR.chunks,{type});TR.chunks=[];
  if(TR.url)URL.revokeObjectURL(TR.url);TR.url=URL.createObjectURL(blob);TR.blob=blob;TR.ext=/mp4/.test(type)?'mp4':'webm';
- if(TR.done){trDownload();$('#trSave').hidden=false;$('#trEndT').textContent='TRAILER RECORDED';$('#trEndS').textContent=`ashes-fall-trailer.${TR.ext} · ${(blob.size/1048576).toFixed(1)} MB`;trDownload()}
+ if(TR.done){trDownload();$('#trSave').hidden=false;$('#trEndT').textContent='TRAILER RECORDED';$('#trEndS').textContent=`${trFileName()} · ${(blob.size/1048576).toFixed(1)} MB`;trDownload()}
 }
+const trFileName=()=>`ashes-fall-trailer-${trSongId}-${trStyle}.${TR.ext||'webm'}`;
 // inside claude.ai the page can't download directly: hand the file to the viewer's save prompt; elsewhere a plain download link
 const trDl=window.claude&&window.claude.use?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
-async function trDownload(){if(!TR.url||!TR.blob)return;const name='ashes-fall-trailer.'+(TR.ext||'webm');const dl=await trDl;
+async function trDownload(){if(!TR.url||!TR.blob)return;const name=trFileName();const dl=await trDl;
  if(dl){try{await dl.save({filename:name,data:TR.blob})}catch(e){const el=$('#trEndS');if(el)el.textContent=e&&e.code==='declined'?'Not saved. Use Save again to save it.':'Saving is not available here.'}return}
  const a=document.createElement('a');a.href=TR.url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
 function trStop(done){
- if(!TR.on)return;TR.on=false;TR.done=!!done;
+ if(!TR.on)return;TR.on=false;TR.done=!!done;trFx.enabled=false;
  if(TR.el){TR.el.pause();TR.el.src=''}if(TR.songG)try{TR.songG.disconnect()}catch(e){}
  if(TR.dest)try{AU.master.disconnect(TR.dest)}catch(e){}TR.dest=null;
  if(AU.master)AU.master.gain.value=settings.vol;
@@ -7332,7 +7413,9 @@ $('#trEndClose').addEventListener('click',()=>show('#trEnd',false));
 $('#trSave').addEventListener('click',trDownload);
 for(const[id,rec]of[['trPlay',false],['trRec',true]]){const b=$('#'+id);b.addEventListener('pointerup',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();if(game.state==='title')trStart(rec)})}
 if(!(window.MediaRecorder&&HTMLCanvasElement.prototype.captureStream))$('#trRec').hidden=true;
+{const box=$('#trSong');for(const[k,s]of Object.entries(TR_SONGS)){const b=document.createElement('button');b.dataset.g=k;b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=s.name;b.querySelector('small').textContent=s.sub;box.appendChild(b)}}
 document.querySelectorAll('#trSty button').forEach(b=>{b.addEventListener('pointerup',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();trSetStyle(b.dataset.s)})});trSetStyle(trStyle);
+document.querySelectorAll('#trSong button').forEach(b=>{b.addEventListener('pointerup',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();trSetSong(b.dataset.g)})});trSetSong(trSongId);
 // ---- console: ~ to open; /trailer lives here
 const CON={el:$('#con'),log:$('#conLog'),inp:$('#conIn'),hist:[],hi:0};
 function conPrint(t,cls){const d=document.createElement('div');if(cls){const b=document.createElement(cls);b.textContent=t;d.appendChild(b)}else d.textContent=t;CON.log.appendChild(d);CON.log.scrollTop=1e9}
@@ -7354,52 +7437,59 @@ CON.inp.addEventListener('keydown',e=>{e.stopPropagation();
  const[cmd,...args]=line.replace(/^\//,'').toLowerCase().split(/\s+/);const f=CON_CMDS[cmd];if(f)f(args);else conPrint('unknown command: /'+cmd+' · type /help','i')});
 CON.inp.addEventListener('keyup',e=>e.stopPropagation());
 
-// ---- director: song clock, segments, cuts, time scale
+// ---- director: song clock, arenas, cuts, time scale
 const trEase=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,trSm=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
 function trPickSubject(){const L=specAlive();if(!L.length)return mechs[0]||null;return L.reduce((a,b)=>specScore(b)>specScore(a)?b:a)}
 function trTick(rdt){
  // the song is the clock; extrapolate between element updates and re-sync when they drift
- if(TR.pre){TR.S+=rdt;if(TR.S>=0)trBeginSong()}
- else{TR.S+=rdt;const ct=TR.el.currentTime;if(!TR.el.paused&&Math.abs(ct-TR.S)>.06)TR.S=ct}
- const S=TR.S;
+ if(TR.pre){TR.S+=rdt;if(TR.S>=TR.T0)trBeginSong()}
+ else{TR.S+=rdt;const ct=TR.el.currentTime;if(!TR.el.paused&&ct>0&&Math.abs(ct-TR.S)>.05)TR.S=ct}
+ const S=TR.S,P=TR.plan,s=TSONG;
  if(SPEC.ev){TR.lastKill={by:SPEC.ev.by,victim:SPEC.ev.victim,pos:SPEC.ev.pos,S};SPEC.ev=null}
- if(S>=TR_END||TR.el.ended){trStop(true);return}
- // the arena swap hides under the black cards (the next frame, so the card is already on screen)
- if(TR.seg===1&&S>=trB(36)+.05){TR.seg=2;trSpawn('canyon',230);TR.shot=-1;TR.sh=null}
- let i=-1;if(S>=0)for(let k=0;k<TR_SHOTS.length;k++)if(S>=trB(TR_SHOTS[k][0]))i=k;
+ if(S>=trB(s.end)||TR.el.ended){trStop(true);return}
+ // arena changes hide under black cards (the frame after the card is up)
+ if(TR.li<P.locs.length&&S>=trB(P.locs[TR.li].b)+.05){trSpawn(P.locs[TR.li].loc);TR.li++;TR.shot=-1;TR.sh=null}
+ let i=-1;for(let k=0;k<P.shots.length;k++)if(S>=trB(P.shots[k][0]))i=k;
  if(i!==TR.shot&&i>=0){TR.shot=i;trCut(i)}
- // beat kicks through the action
- const bi=Math.floor((S-TR_PH)/TR_BT);if(bi!==TR.beat){TR.beat=bi;if(bi>=40&&bi<80&&!(TR.sh&&TR.sh.card)&&TRS.kick&&(!TRS.downOnly||bi%4===0))TR.kick=TRS.kick*(bi%4===0?1:.45)}
- // time scale
- let ts=TR.seg===1?TRS.buildTs:1;const sh=TR.sh;
+ // kicks on the song's hits through the action
+ const bi=Math.floor((S-s.b0)/TR_BT+.02);if(bi!==TR.beat){TR.beat=bi;const a=trAt(bi);if(bi>=s.drop&&bi<s.title&&!(TR.sh&&TR.sh.card)&&TRS.kick&&a>=.5)TR.kick=TRS.kick*a*(trDown(bi)?1:.6)}
+ // time scale: the drop ramps up from deep slow motion, kills slow down, some shots ramp through a slow middle
+ let ts=S<trB(s.drop)?TRS.buildTs:1;const sh=TR.sh;
  if(sh){const u=clamp((S-sh.t0)/Math.max(.01,sh.t1-sh.t0),0,1);
-  if(sh.o.drop)ts=lerp(TRS.drop[0],1,trSm((S-trB(40))/(trB(40+TRS.drop[1])-trB(40))));
+  if(sh.o.drop)ts=lerp(TRS.drop[0],1,trSm((S-trB(s.drop))/(trB(s.drop+TRS.drop[1])-trB(s.drop))));
   else if(sh.kind==='kill')ts=lerp(TRS.killTs,1,trSm(u*1.2-.1));
-  else if(sh.o.slow)ts=sh.o.slow}
- if(TR.pre)ts=1;
- TR.ts=ts;
- // fades
- const fin=S<0?1:1-trSm(S/(TR_BT*2.5));TR.fade=Math.max(fin,0);
- TR.flash=Math.max(0,TR.flash-rdt*2.6);TR.kick=Math.max(0,TR.kick-rdt*7);
+  else if(sh.o.slow)ts=sh.o.slow;
+  else if(sh.o.ramp)ts=1-.72*Math.pow(Math.sin(Math.PI*clamp((u-.12)/.76,0,1)),2)}
+ if(TR.pre)ts=1;TR.ts=ts;
+ // fade in from black; the music fades under the title
+ TR.fade=Math.max(0,1-trSm((S-TR.T0)/(TR_BT*2.5)));
+ const fs=trB(s.title+(s.end-s.title)*.35),vol=.92*(1-trSm((S-fs)/Math.max(.1,trB(s.end)-fs)));
+ if(TR.songG)TR.songG.gain.value=vol;else if(TR.el)TR.el.volume=clamp(vol,0,1);
+ TR.flash=Math.max(0,TR.flash-rdt*2.6);TR.kick=Math.max(0,TR.kick-rdt*7);TR.zk=Math.max(0,TR.zk-rdt*5);
 }
 function trCut(i){
- const[b,kind,o={}]=TR_SHOTS[i],t0=trB(b),t1=i+1<TR_SHOTS.length?trB(TR_SHOTS[i+1][0]):TR_END;
- const sh={kind,o,t0,t1,s:Math.random()<.5?-1:1,a0:Math.random()*TAU,card:kind==='card'||kind==='title'};
- if(o.drop)TR.flash=TRS.flash;
+ const P=TR.plan,[b,kind,o]=P.shots[i],t0=trB(b),t1=i+1<P.shots.length?trB(P.shots[i+1][0]):trB(TSONG.end);
+ const sh={kind,o,t0,t1,i,s:Math.random()<.5?-1:1,a0:Math.random()*TAU,card:kind==='card'||kind==='title'};
+ if(o.drop){TR.flash=TRS.flash;TR.zk=1}else if(o.tin==='flash')TR.flash=Math.max(TR.flash,.55);
  if(!sh.card){
   const K=TR.lastKill;
-  if(o.kill&&K&&TR.S-K.S<3.2||(TRS.autoKill&&b>=40&&K&&TR.S-K.S<1.2&&!K.used&&(t1-t0)>TR_BT*1.5&&kind!=='missile')){sh.kind='kill';sh.T=K.by&&K.by.alive?K.by:K.victim;sh.V=K.victim;sh.fixed=K.pos.clone();K.used=true}
+  if(o.kill&&K&&TR.S-K.S<3.2||(TRS.autoKill&&b>=TSONG.drop&&K&&TR.S-K.S<1.2&&!K.used&&(t1-t0)>TR_BT*1.5&&kind!=='missile'&&!o.drop)){sh.kind='kill';sh.T=K.by&&K.by.alive?K.by:K.victim;sh.V=K.victim;sh.fixed=K.pos.clone();K.used=true}
   if(sh.kind==='missile'){const L=projs.filter(p=>(p.type==='missile'||p.type==='rocket'||p.type==='spear'||p.type==='grenade')&&p.age<.6&&(p.life-p.age)>.9&&p.owner&&p.owner.alive);
    if(L.length){const p=L.reduce((a,c)=>specScore(c.owner)>specScore(a.owner)?c:a);sh.p=p;sh.T=p.owner;sh.lp=p.pos.clone();sh.lv=p.vel.clone().normalize()}else sh.kind='ots'}
   if(!sh.T)sh.T=trPickSubject();
   if(!sh.T){sh.kind='reveal'}
-  else{const T=sh.T,v=T.vel,hs=Math.hypot(v.x,v.z);sh.F0=hs>10?new V3(v.x/hs,0,v.z/hs):new V3(Math.sin(T.yaw),0,Math.cos(T.yaw));try{trFindClear(sh)}catch(e){}}
+  else{const T=sh.T,v=T.vel,hs=Math.hypot(v.x,v.z);sh.F0=hs>10?new V3(v.x/hs,0,v.z/hs):new V3(Math.sin(T.yaw),0,Math.cos(T.yaw));
+   // a second frame for two-shots and rack focus: its target, else the nearest
+   if(sh.kind==='rack'||sh.kind==='duel'){const tg=T.ai&&T.ai.target&&T.ai.target.alive?T.ai.target:null;sh.N=tg||specAlive().filter(m=>m!==T).sort((a,c)=>a.pos.distanceTo(T.pos)-c.pos.distanceTo(T.pos))[0]||null;if(!sh.N)sh.kind=sh.kind==='rack'?'hero':'orbit'}
+   try{trFindClear(sh)}catch(e){}}
   SPEC.tgt=sh.T;
  }
+ // a whip carries its motion blur across the cut; any other cut starts clean
+ TR.whipCut=o.tin==='whip';
  TR.sh=sh;TR.snap=true;
 }
 // ---- camera: one function per shot; heading is frozen at the cut so moves read as deliberate
-const _tc=new V3(),_tp=new V3(),_tl=new V3(),_tsd=new V3(),_tu=new V3();
+const _tc=new V3(),_tp=new V3(),_tl=new V3(),_tsd=new V3(),_tu=new V3(),_tu2=new V3(),_tu3=new V3(),_tfar=new V3(),_tdp=new V3(),_tq=new THREE.Quaternion();
 function trBlocked(a,b){
  // does a box or the ground cut the line between camera and subject?
  for(let k=1;k<10;k++){const f=k/10,x=lerp(b.x,a.x,f),z=lerp(b.z,a.z,f);if(lerp(b.y,a.y,f)<groundH(x,z)+1)return true}
@@ -7413,78 +7503,141 @@ function trFindClear(sh){
  const T=sh.T;if(!T)return;const c=sh.kind==='kill'&&sh.fixed?sh.fixed.clone():T.center(new V3()),H=T.rig.height||12,F=sh.F0,sd=new V3(F.z,0,-F.x),p=new V3();
  const start=(a,s)=>{switch(sh.kind){
   case'reveal':return p.set(c.x+Math.sin(a)*26*H,c.y+11*H,c.z+Math.cos(a)*26*H);
+  case'aerial':return p.set(c.x+Math.sin(a)*13*H,c.y+13*H,c.z+Math.cos(a)*13*H);
   case'orbit':return p.set(c.x+Math.sin(a)*4.6*H,c.y+1.25*H,c.z+Math.cos(a)*4.6*H);
+  case'spiral':return p.set(c.x+Math.sin(a)*7*H,c.y+.6*H,c.z+Math.cos(a)*7*H);
   case'whip':return p.set(c.x+Math.sin(a)*5.2*H,c.y+1.6*H,c.z+Math.cos(a)*5.2*H);
   case'kill':return p.set(c.x+Math.sin(a)*6.5*H,c.y+2*H,c.z+Math.cos(a)*6.5*H);
   case'tele':p.copy(c).addScaledVector(F,Math.cos(a)*30*H).addScaledVector(sd,Math.sin(a)*30*H);p.y=c.y+2.4*H;return p;
+  case'hero':p.copy(c).addScaledVector(F,5*H).addScaledVector(sd,s*2*H);p.y=c.y-.4*H;return p;
+  case'track':p.copy(c).addScaledVector(sd,s*4.2*H);p.y=c.y+.45*H;return p;
+  case'snap':p.copy(c).addScaledVector(sd,s*7*H).addScaledVector(F,2*H);p.y=c.y+1.2*H;return p;
+  case'duel':case'rack':{const N=sh.N&&sh.N.rig?sh.N.center(new V3()):c.clone().addScaledVector(F,60),ax=N.clone().sub(c);ax.y=0;const l=Math.max(1,ax.length());ax.multiplyScalar(1/l);
+   if(sh.kind==='duel'){p.copy(c).lerp(N,.5).addScaledVector(new V3(ax.z,0,-ax.x),s*Math.max(5*H,l*.9));p.y=(c.y+N.y)/2+1.2*H}else{p.copy(N).addScaledVector(ax,-1.7*H).addScaledVector(new V3(ax.z,0,-ax.x),s*1.15*H);p.y=N.y+.8*H}return p}
+  case'chase':p.copy(c).addScaledVector(F,-3.4*H);p.y=c.y+H;return p;
   default:p.copy(c).addScaledVector(sd,s*3*H);p.y=c.y+.6*H;return p}};
- const angled=/reveal|orbit|whip|kill|tele/.test(sh.kind);
+ const angled=/reveal|aerial|orbit|spiral|whip|kill|tele/.test(sh.kind);
  for(let t=0;t<(angled?8:2);t++){const a=sh.a0+t*TAU/8*(angled?1:0),s=angled?sh.s:sh.s*(t?-1:1);if(!trBlocked(start(a,s),c)){sh.a0=a;sh.s=s;return}}
+ // nowhere clear for this move (a wall, a tower): fall back to an orbit, which can search all the way round
+ if(!angled&&sh.kind!=='missile'){sh.kind='orbit';for(let t=0;t<8;t++){const a=sh.a0+t*TAU/8;if(!trBlocked(start(a,sh.s),c)){sh.a0=a;return}}}
 }
 function trLift(pos,look){
  // raise the camera until the ground no longer hides the subject
  let need=pos.y;for(let k=2;k<=10;k++){const f=k/10,x=lerp(look.x,pos.x,f),z=lerp(look.z,pos.z,f),g=groundH(x,z)+3;const y=lerp(look.y,pos.y,f);if(y<g)need=Math.max(need,look.y+(g-look.y)/f)}
  return need-pos.y}
+// a hand on the camera: slow, layered drift (never jitter)
+const trHand=(t,k)=>Math.sin(t*1.13+k)*.55+Math.sin(t*2.31+k*1.7)*.3+Math.sin(t*4.7+k*.3)*.15;
 function trCam(dt){
- const sh=TR.sh;if(!sh||sh.card)return;
+ const sh=TR.sh;if(!sh||sh.card){TR.pv=false;trFxIdle();return}
  const S=TR.S,u=clamp((S-sh.t0)/Math.max(.01,sh.t1-sh.t0),0,1),e=trEase(u),T=sh.T,snap=TR.snap;TR.snap=false;
  let c;if(T){T.center(_tc);if(snap)TR.sc.copy(_tc);else TR.sc.lerp(_tc,1-Math.exp(-dt*10));c=TR.sc}else c=TR.sc.set(0,groundH(0,0)+10,0);
  const H=T&&T.rig.height||12;
  // a subject that dies mid-shot becomes a kill shot around its wreck
- if(T&&!T.alive&&!/kill|missile|tele|reveal|flyby/.test(sh.kind)){sh.kind='kill';sh.V=T;sh.fixed=c.clone();sh.a0=Math.atan2(camera.position.x-c.x,camera.position.z-c.z)-u;sh.kr=clamp(Math.hypot(camera.position.x-c.x,camera.position.z-c.z),3*H,9*H);sh.kh=clamp(camera.position.y-c.y,.5*H,4*H)}
+ if(T&&!T.alive&&!/kill|missile|tele|reveal|aerial|flyby/.test(sh.kind)){sh.kind='kill';sh.V=T;sh.fixed=c.clone();sh.a0=Math.atan2(camera.position.x-c.x,camera.position.z-c.z)-u;sh.kr=clamp(Math.hypot(camera.position.x-c.x,camera.position.z-c.z),3*H,9*H);sh.kh=clamp(camera.position.y-c.y,.5*H,4*H)}
  if(snap){if(sh.F0)TR.f.copy(sh.F0);sh.F=TR.f.clone();TR.lift=0}
- const F=sh.F||TR.f,sd=_tsd.set(F.z,0,-F.x),s=sh.s,UP=UPV;
- const pos=_tp.copy(c),look=_tl.copy(c);let fov=50,roll=0,dof=0,up=null;
+ const F=sh.F||TR.f,sd=_tsd.set(F.z,0,-F.x),s=sh.s;
+ const pos=_tp.copy(c),look=_tl.copy(c);let fov=50,roll=0,dof=0,up=null,hand=TRS.hand,focus=0;
  const ring=(a,r,h)=>pos.set(c.x+Math.sin(a)*r,c.y+h,c.z+Math.cos(a)*r);
  switch(sh.kind){
   case'reveal':{const a=sh.a0;ring(a,lerp(26,15,e)*H,lerp(11,3.5,e)*H);look.y+=lerp(-1,.4,e)*H;fov=44;break}
-  case'tele':{pos.copy(c).addScaledVector(F,Math.cos(sh.a0)*30*H).addScaledVector(sd,Math.sin(sh.a0)*30*H+(u-.5)*3*H);pos.y+=2.4*H;fov=8.5;dof=.55;break}
+  case'aerial':{const a=sh.a0+s*e*.35,r=lerp(13,10,e)*H;ring(a,r,lerp(13,9,e)*H);look.addScaledVector(F,1.5*H);fov=46;hand*=.5;break}
+  case'tele':{pos.copy(c).addScaledVector(F,Math.cos(sh.a0)*30*H).addScaledVector(sd,Math.sin(sh.a0)*30*H+(u-.5)*3*H);pos.y+=2.4*H;fov=8.5;dof=.55;hand*=.35;break}
   case'dolly':pos.addScaledVector(sd,s*3.2*H).addScaledVector(F,lerp(-2.4,2.4,e)*H);pos.y+=.25*H;look.y+=.1*H;fov=40;break;
+  case'track':{pos.addScaledVector(sd,s*4.2*H).addScaledVector(F,lerp(.9,-.9,u)*H);pos.y+=.45*H;look.addScaledVector(F,.8*H);look.y+=.12*H;fov=34;dof=.4;break}
   case'orbit':ring(sh.a0+s*e*1.15,4.6*H,1.25*H);fov=46;break;
+  case'spiral':ring(sh.a0+s*e*1.7,lerp(7,3.8,e)*H,lerp(.4,3.2,e)*H);look.y+=lerp(.4,0,e)*H;fov=lerp(40,50,e);break;
   case'whip':{const k=1-Math.pow(1-u,3);ring(sh.a0+s*k*2.5,lerp(5.2,3.4,k)*H,lerp(1.6,.7,k)*H);fov=sh.o.drop?lerp(70,56,trSm(u*2)):58;break}
   case'crane':{_tu.copy(F).multiplyScalar(.6).addScaledVector(sd,s).normalize();pos.addScaledVector(_tu,lerp(2.8,6.2,e)*H);pos.y+=lerp(.2,5,e)*H;look.y+=lerp(.35,0,e)*H;fov=lerp(42,52,e);break}
-  case'ots':{const foe=T&&T.ai&&T.ai.target&&T.ai.target.alive?T.ai.target.center(new V3()):c.clone().addScaledVector(F,80);const d=foe.clone().sub(c);d.y=0;const l=d.length()||1;d.multiplyScalar(1/l);
+  case'hero':{_tu.copy(F).addScaledVector(sd,s*.45).normalize();pos.addScaledVector(_tu,lerp(5.5,3.4,e)*H);pos.y=Math.max(groundH(pos.x,pos.z)+1.2,c.y-.55*H);look.y+=lerp(.55,.35,e)*H;fov=lerp(30,25,e);dof=.75;hand*=.6;break}
+  case'ots':{const foe=T&&T.ai&&T.ai.target&&T.ai.target.alive?T.ai.target.center(_tu2):_tu2.copy(c).addScaledVector(F,80);const d=_tu3.copy(foe).sub(c);d.y=0;const l=d.length()||1;d.multiplyScalar(1/l);
    pos.addScaledVector(d,-2.3*H).addScaledVector(_tu.set(d.z,0,-d.x),s*1.05*H);pos.y+=.95*H;look.copy(c).lerp(foe,.55);fov=lerp(42,36,e);break}
+  case'rack':{const N=sh.N&&sh.N.rig?sh.N.center(_tu2):null;
+   if(N){const d=_tu3.copy(c).sub(N);d.y=0;const l=d.length()||1;d.multiplyScalar(1/l);pos.copy(N).addScaledVector(d,-1.7*H).addScaledVector(_tu.set(d.z,0,-d.x),s*1.15*H);pos.y+=.8*H;look.copy(c);look.y+=.2*H;fov=lerp(32,27,e);dof=1;
+    // pull focus from the near frame to the far one
+    focus=lerp(pos.distanceTo(N),pos.distanceTo(c),trSm((u-.3)/.35))}
+   else{ring(sh.a0,6*H,H);fov=36;dof=.6}break}
+  case'duel':{const N=sh.N&&sh.N.alive?sh.N.center(_tu2):_tu2.copy(c).addScaledVector(F,60);const mid=_tu3.copy(c).lerp(N,.5),ax=_tu.copy(N).sub(c);ax.y=0;const l=Math.max(1,ax.length());ax.multiplyScalar(1/l);
+   const r=Math.max(5*H,l*.9);pos.copy(mid).addScaledVector(_tfar.set(ax.z,0,-ax.x),s*r).addScaledVector(ax,(u-.5)*1.6*H);pos.y=mid.y+1.2*H;look.copy(mid);fov=44;break}
   case'flyby':{if(!sh.fix){const v=T?T.vel:_tu.set(0,0,0),hs=Math.hypot(v.x,v.z),ah=hs>15?_tu.set(v.x*1.1,0,v.z*1.1):_tu.copy(F).multiplyScalar(4*H);
-    sh.fix=c.clone().add(ah).addScaledVector(sd,s*rand(2.6,3.6)*H);sh.fix.y=Math.max(c.y+rand(-.1,.5)*H,groundH(sh.fix.x,sh.fix.z)+2)}pos.copy(sh.fix);fov=40;break}
-  case'top':{pos.addScaledVector(F,-.4*H);pos.y+=9.5*H;{const r=s*e*.9,cr=Math.cos(r),sr=Math.sin(r);up=_tu.set(F.x*cr+F.z*sr,0,-F.x*sr+F.z*cr)};fov=50;break}
+    sh.fix=c.clone().add(ah).addScaledVector(sd,s*rand(2.6,3.6)*H);sh.fix.y=Math.max(c.y+rand(-.1,.5)*H,groundH(sh.fix.x,sh.fix.z)+2)}pos.copy(sh.fix);fov=40;hand*=.3;break}
+  case'chase':{pos.addScaledVector(F,-3.4*H).addScaledVector(sd,s*.5*H);pos.y+=1*H;look.addScaledVector(F,3*H);fov=60;hand*=2.4;break}
+  case'snap':{if(!sh.fix){sh.fix=c.clone().addScaledVector(sd,s*7*H).addScaledVector(F,2*H);sh.fix.y=c.y+1.2*H}pos.copy(sh.fix);
+   // a crash zoom on the shot's middle beat
+   const k=trSm((u-.42)/.1);fov=lerp(54,19,k);if(k>.05&&!sh.zk){sh.zk=1;TR.zk=1}dof=k*.45;hand*=.6;break}
+  case'top':{pos.addScaledVector(F,-.4*H);pos.y+=9.5*H;{const r=s*e*.9,cr=Math.cos(r),sr=Math.sin(r);up=_tu.set(F.x*cr+F.z*sr,0,-F.x*sr+F.z*cr)};fov=50;hand=0;break}
   case'dutch':{_tu.copy(F).addScaledVector(sd,s*.6).normalize();pos.addScaledVector(_tu,1.9*H);pos.y+=.55*H;look.y+=.38*H;roll=s*.3;fov=36;dof=.9;break}
   case'push':{_tu.copy(F).addScaledVector(sd,s*.75).normalize();pos.addScaledVector(_tu,lerp(6.5,2.7,e)*H);pos.y+=lerp(.7,.35,e)*H;look.y+=.25*H;fov=40;dof=.8;break}
   case'low':{pos.addScaledVector(F,3*H).addScaledVector(sd,s*1.5*H);pos.y=Math.max(groundH(pos.x,pos.z)+1.1,c.y-1.3*H);look.y+=.4*H;fov=64;break}
   case'missile':{const p=sh.p,alive=p&&projs.includes(p);if(alive){sh.lp.copy(p.pos);_tu.copy(p.vel);if(_tu.lengthSq()>1)sh.lv.lerp(_tu.normalize(),1-Math.exp(-dt*6)).normalize()}
    if(alive||!sh.hold){pos.copy(sh.lp).addScaledVector(sh.lv,-14).addScaledVector(_tsd.set(sh.lv.z,0,-sh.lv.x).normalize(),s*3);pos.y+=3.2;if(!alive)sh.hold=pos.clone()}
-   if(sh.hold)pos.copy(sh.hold);const tg=alive&&p.target&&p.target.alive?p.target.center(_tc):null;if(tg&&!sh.lk)sh.lk=tg.clone();if(tg)sh.lk.lerp(tg,1-Math.exp(-dt*8));look.copy(sh.lp).addScaledVector(sh.lv,alive?40:0);if(sh.lk)look.lerp(sh.lk,alive?.7:.4);fov=62;break}
+   if(sh.hold)pos.copy(sh.hold);const tg=alive&&p.target&&p.target.alive?p.target.center(_tc):null;if(tg&&!sh.lk)sh.lk=tg.clone();if(tg)sh.lk.lerp(tg,1-Math.exp(-dt*8));look.copy(sh.lp).addScaledVector(sh.lv,alive?40:0);if(sh.lk)look.lerp(sh.lk,alive?.7:.4);fov=62;hand=0;break}
   case'kill':{if(sh.V&&!sh.V.alive&&sh.V.rig){const w=sh.V.center(_tu);if(isFinite(w.y))sh.fixed.lerp(w,1-Math.exp(-dt*4))}const f=sh.fixed;look.copy(f);const kr=sh.kr||6.5*H;pos.set(f.x+Math.sin(sh.a0+u)*kr,f.y+(sh.kh||2*H),f.z+Math.cos(sh.a0+u)*kr);fov=sh.kr?clamp(camera.fov,36,64):48;break}
  }
  // keep it above ground, in bounds, with the subject in sight
  {const lim=world.half-20;pos.x=clamp(pos.x,-lim,lim);pos.z=clamp(pos.z,-lim,lim);const gw=groundH(pos.x,pos.z)+1;if(pos.y<gw)pos.y=gw}
  if(world.ceil<1e8&&pos.y>world.ceil-8)pos.y=world.ceil-8;
+ if(!/missile|tele|top|aerial|reveal/.test(sh.kind)&&sh.t1-S>.9){sh.oc=(sh.oc||0)-dt;if(sh.oc<=0){sh.oc=.25;if(trBlocked(pos,look)){sh.ob=(sh.ob||0)+1;if(sh.ob>=2&&T&&T.alive){sh.kind='orbit';sh.a0=Math.atan2(pos.x-c.x,pos.z-c.z);sh.t0=S;sh.o=Object.assign({},sh.o,{tin:'cut'});sh.ob=0;try{trFindClear(sh)}catch(e){}TR.snap=true;TR.pv=false}}else sh.ob=0}}
  if(sh.kind!=='missile'){const need=trLift(pos,look);TR.lift=snap?need:lerp(TR.lift,need,1-Math.exp(-dt*5));pos.y+=TR.lift}
+ // operator's hand: a slow drift of the aim, larger on long lenses in screen terms so scaled down there
+ if(hand>0){const d=pos.distanceTo(look),k=hand*d*.004*(fov<20?.35:1);look.x+=trHand(S,1)*k;look.y+=trHand(S,4)*k*.6;look.z+=trHand(S,7)*k}
  if(TR.kick>0){const k=TR.kick*(fov<20?.12:.7);pos.x+=rand(-1,1)*k;pos.y+=rand(-1,1)*k;pos.z+=rand(-1,1)*k}
- camera.position.copy(pos);if(up)camera.up.copy(up);else camera.up.set(0,1,0);camera.lookAt(look);if(roll)camera.rotateZ(roll*trSm(u*3));camPos.copy(camera.position);
+ camera.position.copy(pos);if(up)camera.up.copy(up);else camera.up.set(0,1,0);camera.lookAt(look);if(roll)camera.rotateZ(roll*trSm(u*3));
+ // whip pans across cuts: the outgoing shot swings away, the incoming one swings in from the same direction
+ {const W=.16,nx=TR.plan.shots[sh.i+1],sg=j=>j%2?1:-1;let yo=0;
+  if(nx&&nx[2].tin==='whip'){const te=sh.t1-S;if(te<W)yo+=sg(sh.i+1)*Math.pow(1-Math.max(0,te)/W,2)*.95}
+  if(sh.o.tin==='whip'){const tb=S-sh.t0;if(tb<W)yo-=sg(sh.i)*Math.pow(1-tb/W,2)*.95}
+  if(yo)camera.rotateY(yo)}
+ camPos.copy(camera.position);
  if(sh.o.drop)fov*=1+TR.flash*.12;
  if(Math.abs(camera.fov-fov)>.01){camera.fov=fov;camera.updateProjectionMatrix();PS_SCALE=TR.H/(2*Math.tan(fov*Math.PI/360));for(const p of psys)p.mat.uniforms.uScale.value=PS_SCALE}
- DOF.amt=dof;DOF.focus=pos.distanceTo(look);TR.look=look;
+ DOF.amt=dof;DOF.focus=focus||pos.distanceTo(look);TR.look=look;
+ trFxUpdate(dt,snap);
 }
-// ---- compositing: the rendered frame, letterbox, title cards, fades — this canvas is what's shown and recorded
+// ---- the lens: motion blur from the camera's own movement (pans blur everything; travel blurs by depth, the subject stays sharp),
+// a zoom blur on crash zooms and the drop, chromatic fringe, grain and the style's grade
+function trFxIdle(){const U=trFx.uniforms;U.rot.value.set(0,0);U.trv.value.set(0,0);U.zoom.value=0;trFxGrade()}
+function trFxGrade(){const U=trFx.uniforms,g=TRS.grade;U.lift.value.set(...g.lift);U.gain.value.set(...g.gain);U.sat.value=g.sat;U.con.value=g.con;U.ca.value=TRS.ca;U.grain.value=TRS.grain;U.time.value=performance.now()/1000;U.res.value.set(TR.W,TR.H)}
+function trFxUpdate(dt,snap){
+ const U=trFx.uniforms;trFxGrade();camera.updateMatrixWorld();
+ const shutter=1/48,k=shutter/Math.max(dt,1/240),f=TR.H/(2*Math.tan(camera.fov*Math.PI/360));
+ if(TR.pv&&(!snap||TR.whipCut)){
+  if(!snap){
+   // pan: where the last frame's centre ray now lands on screen
+   _tfar.copy(TR.pf).multiplyScalar(4000).add(TR.pp).project(camera);U.rot.value.set(_tfar.x*TR.W*.5*k,_tfar.y*TR.H*.5*k);if(_tfar.z>1)U.rot.value.set(0,0);
+   // travel, in camera space; the shader divides by depth
+   _tdp.copy(camera.position).sub(TR.pp).applyQuaternion(_tq.copy(camera.quaternion).invert());U.trv.value.set(-_tdp.x*f*k,-_tdp.y*f*k);
+   U.zoom.value=clamp(Math.abs(camera.fov-TR.pfov)/camera.fov*k*.6,0,.12)}
+ }else{U.rot.value.set(0,0);U.trv.value.set(0,0)}
+ U.zoom.value=Math.min(.16,U.zoom.value*.6+TR.zk*.06);
+ U.df.value=DOF.focus;U.useDepth.value=1;
+ TR.pp.copy(camera.position);camera.getWorldDirection(TR.pf);TR.pfov=camera.fov;TR.pv=true}
+// ---- compositing: the rendered frame, letterbox, cards, title, dips and flashes — this canvas is what's shown and recorded
 function trText(x,str,X,Y,sp,font,col){x.font=font;x.fillStyle=col;let w=0;const ws=[...str].map(ch=>{const m=x.measureText(ch).width;w+=m+sp;return m});w-=sp;let cx=X-w/2;[...str].forEach((ch,i)=>{x.fillText(ch,cx,Y);cx+=ws[i]+sp});return w}
 function trPost(){
- const x=TR.cx,W=TR.W,H=TR.H,k=H/1080,S=TR.S,sh=TR.sh;
- x.globalAlpha=1;const src=renderer.domElement;if(src instanceof HTMLCanvasElement){if(TRS.filter)x.filter=TRS.filter;x.drawImage(src,0,0,W,H);x.filter='none'}
- const bar=Math.round((H-W/2.39)/2);x.fillStyle='#000';x.fillRect(0,0,W,bar);x.fillRect(0,H-bar,W,bar);
+ const x=TR.cx,W=TR.W,H=TR.H,k=H/1080,S=TR.S,sh=TR.sh,P=TR.plan;
+ x.globalAlpha=1;const src=renderer.domElement;if(src instanceof HTMLCanvasElement){if(!trFx.enabled||!QUAL[settings.qual].bloom)x.filter=`saturate(${TRS.grade.sat}) contrast(${TRS.grade.con})`;x.drawImage(src,0,0,W,H);x.filter='none'}
+ // the letterbox slides in over the first bar
+ const full=Math.round((H-W/2.39)/2),bar=Math.round(full*trSm((S-TR.T0+.6)/(TR_BT*4)));x.fillStyle='#000';x.fillRect(0,0,W,bar);x.fillRect(0,H-bar,W,bar);
  if(TR.fade>0){x.globalAlpha=TR.fade;x.fillRect(0,0,W,H);x.globalAlpha=1}
+ // dips through black on soft cuts
+ {let d=0;for(const t of P.dips)d=Math.max(d,1-trSm(Math.abs(S-t)/.22));if(d>0){x.globalAlpha=d;x.fillStyle='#000';x.fillRect(0,0,W,H);x.globalAlpha=1}}
  x.textBaseline='middle';x.textAlign='left';
  // lines in the lower bar during the build
- for(const[a,b,t]of TR_SUBS){const t0=trB(a),t1=trB(b);if(S<t0||S>t1)continue;const al=Math.min(trSm((S-t0)/.35),trSm((t1-S)/.3));x.globalAlpha=al;
-  const w=trText(x,t,W/2,H-bar/2,11*k,`600 ${Math.round(34*k)}px "Chakra Petch","Arial Narrow",sans-serif`,'#e9e6e1');x.fillStyle='#ff2236';x.fillRect(W/2-w/2,H-bar/2+26*k,Math.max(0,(w)*trSm((S-t0)/.6)),2*k);x.globalAlpha=1}
- if(sh&&sh.kind==='card'){const u=(S-sh.t0)/TR_BT;x.fillStyle='#000';x.fillRect(0,0,W,H);const hard=sh.o.hard,sz=hard?104:88;x.globalAlpha=hard?1:trSm(u*2.4);
-  const w=trText(x,sh.o.text,W/2,H/2,(hard?.22:.3)*sz*k,`700 ${Math.round(sz*k)}px "Chakra Petch","Arial Narrow",sans-serif`,'#f2efe9');x.fillStyle='#ff2236';const rw=w*trSm(u*1.6);x.fillRect(W/2-rw/2,H/2+sz*.72*k,rw,3*k);x.globalAlpha=1}
- if(sh&&sh.kind==='title'){const u=S-sh.t0;x.fillStyle='#000';x.fillRect(0,0,W,H);
-  const a1=trSm(u/.45),a2=trSm((u-.35)/.5),a3=trSm((u-.7)/.5),out=1-trSm((u-(TR_END-sh.t0-.35))/.3);
+ for(const[a,b,t]of P.subs){const t0=trB(a),t1=trB(b);if(S<t0||S>t1)continue;const al=Math.min(trSm((S-t0)/.35),trSm((t1-S)/.3));x.globalAlpha=al;
+  const sp=lerp(20,11,trSm((S-t0)/1.2))*k;const w=trText(x,t,W/2,H-full/2,sp,`600 ${Math.round(34*k)}px "Chakra Petch","Arial Narrow",sans-serif`,'#e9e6e1');x.fillStyle='#ff2236';x.fillRect(W/2-w/2,H-full/2+26*k,Math.max(0,w*trSm((S-t0)/.6)),2*k);x.globalAlpha=1}
+ if(sh&&sh.kind==='card'){const u=(S-sh.t0)/TR_BT;x.fillStyle='#000';x.fillRect(0,0,W,H);
+  if(sh.o.text){const hard=sh.o.hard,sz=hard?104:88,f=`700 ${Math.round(sz*k)}px "Chakra Petch","Arial Narrow",sans-serif`,sp=(hard?.22:lerp(.5,.3,trSm(u*1.5)))*sz*k;
+   if(hard){// a hard card lands with a brief colour split
+    const g=1-trSm((S-sh.t0)/.14);if(g>0){x.globalAlpha=.8*g;trText(x,sh.o.text,W/2-12*k*g,H/2,sp,f,'#ff2236');trText(x,sh.o.text,W/2+12*k*g,H/2,sp,f,'#2ad1ff')}x.globalAlpha=1}
+   else x.globalAlpha=trSm(u*2.4);
+   const w=trText(x,sh.o.text,W/2,H/2,sp,f,'#f2efe9');x.fillStyle='#ff2236';const rw=w*trSm(u*1.6);x.fillRect(W/2-rw/2,H/2+sz*.72*k,rw,3*k);x.globalAlpha=1}}
+ if(sh&&sh.kind==='title'){const u=S-sh.t0,end=trB(TSONG.end);x.fillStyle='#000';x.fillRect(0,0,W,H);
+  const a1=trSm(u/.45),a2=trSm((u-.35)/.5),a3=trSm((u-.7)/.5),out=1-trSm((u-(end-sh.t0-.45))/.4);
   const fT=`800 ${Math.round(170*k)}px "Shippori Mincho B1","Noto Serif JP",Georgia,serif`,fK=`800 ${Math.round(150*k)}px "Shippori Mincho B1","Noto Serif JP",Georgia,serif`;
-  x.font=fT;let wA=-14*k;for(const ch of'ASHES FALL')wA+=x.measureText(ch).width+14*k;x.font=fK;const wK=TRS.minTitle?0:x.measureText('灰').width,gap=TRS.minTitle?0:44*k,x0=W/2-(wK+gap+wA)/2,ax=x0+wK+gap+wA/2,cy=H/2-24*k;
+  const T='ASHES FALL',trk=lerp(48,14,trSm(u/1.6))*k;x.font=fT;let wA=-trk;for(const ch of T)wA+=x.measureText(ch).width+trk;x.font=fK;const wK=TRS.minTitle?0:x.measureText('灰').width,gap=TRS.minTitle?0:44*k,x0=W/2-(wK+gap+wA)/2,ax=x0+wK+gap+wA/2,cy=H/2-24*k;
   x.globalAlpha=a1*out;x.fillStyle='#ff2236';if(!TRS.minTitle)x.fillText('灰',x0,cy+4*k);
-  const scale=1+.04*(1-a1);x.save();x.translate(ax,cy);x.scale(scale,scale);trText(x,'ASHES FALL',0,0,14*k,fT,'#f2efe9');x.restore();
+  // the letters arrive one after another while the tracking tightens
+  {x.font=fT;let cx=ax-wA/2;[...T].forEach((ch,i)=>{const al=trSm((u-.08*i)/.35);x.globalAlpha=al*out;x.fillStyle='#f2efe9';x.fillText(ch,cx,cy+(1-al)*10*k);cx+=x.measureText(ch).width+trk})}
   x.globalAlpha=a2*out;x.fillStyle='#ff2236';const rw=wA*a2;x.fillRect(ax-rw/2,cy+100*k,rw,3*k);
   x.globalAlpha=a3*out;trText(x,'ASSAULT FRAME WARFARE',ax,cy+146*k,14*k,`600 ${Math.round(34*k)}px "Chakra Petch","Arial Narrow",sans-serif`,'#c9c4bc');x.globalAlpha=1}
  if(TR.flash>0){x.globalAlpha=TR.flash*.85;x.fillStyle='#fff6ee';x.fillRect(0,bar,W,H-bar*2);x.globalAlpha=1}
