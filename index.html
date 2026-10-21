@@ -646,7 +646,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   </div>
   <div class="trBtns" hidden><div id="trSong"></div><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0409 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0411 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
 <div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
@@ -1482,9 +1482,11 @@ function buildRig(b){
   chrome:std(0xd4d8de,null,.16,1,fs),glass:std(0x22303c,null,.08,.9,fs),dark:std(0x111215,null,.8,.4,fs),pipe:std(0x4a4c52,null,.32,.9,fs)};
  const R={root:new THREE.Group(),M,flames:[],rcs:[],legs:[],wheels:[],walk:0,swing:null,type:L.type,legAnim:'biped',hipW:1.4};
  const add=(par,geo,mat,sx,sy,sz,x,y,z,rx,ry,rz)=>{const m=new THREE.Mesh(geo,mat);m.scale.set(sx,sy,sz);m.position.set(x||0,y||0,z||0);if(rx||ry||rz)m.rotation.set(rx||0,ry||0,rz||0);m.castShadow=true;m.receiveShadow=false;   /* frames cast shadows but never onto themselves */par.add(m);return m};
- const G=(par,x,y,z)=>{const g=new THREE.Group();g.position.set(x||0,y||0,z||0);par.add(g);return g};
+ const G=(par,x,y,z)=>{const g=new THREE.Group();g.position.set(x||0,y||0,z||0);par.add(g);if(R._rec)R._flat.push(g);return g};
  const K={R,M,add,G,thr:[]};       // thr: thruster mounts [parent,x,y,z,dx,dy,dz,size]
- R.spin=[];R.treads=[];
+ R.spin=[];R.treads=[];R.osc=[];R._flat=[];R._rec=0;
+ // oscillating parts (radar sweeps, nodding sensors, pumping rods): K.osc(group,'rotation'|'position',axis,amplitude,frequency,phase)
+ K.osc=(g,prop,ax,amp,f,ph=0)=>{R.osc.push({g,prop,ax,amp,f,ph,base:g[prop][ax]});return g};
  // ---- detail kit: small mechanical parts shared by every frame
  // pipe between two points (Euler set so the cylinder's Y axis runs a→b), chrome collars at both ends
  K.pipe=(par,a,b,r,mat,collar=true)=>{const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],L=Math.hypot(dx,dy,dz)||1;
@@ -1514,23 +1516,24 @@ function buildRig(b){
  K.bolts=(par,pts,sz=.1)=>{for(const p of pts)add(par,GEO.oct,M.chrome,sz,sz,sz,...p)};
 
  const hips=G(R.root);R.hips=hips;
- R.hipH=buildLegs(L,hips,K);hips.position.y=R.hipH;detailLegs(L,K);
+ R.hipH=buildLegs(L,hips,K);hips.position.y=R.hipH;R._rec=1;detailLegs(L,K);detail2Legs(L,K);R._rec=0;
  const torso=G(hips,0,.35,0);R.torso=torso;
- const D=buildCore(C,torso,K);R.top=D.top;R.cw=D.cw;detailCore(C,torso,D,K);
- R.head=G(torso,0,D.top+.55,.2);buildHead(H,R.head,K);detailHead(H,R.head,K);
+ const D=buildCore(C,torso,K);R.top=D.top;R.cw=D.cw;R._rec=1;detailCore(C,torso,D,K);detail2Core(C,torso,D,K);R._rec=0;
+ R.head=G(torso,0,D.top+.55,.2);buildHead(H,R.head,K);R._rec=1;detailHead(H,R.head,K);detail2Head(H,R.head,K);R._rec=0;
  R.arms={};
  for(const s of[-1,1]){
   const ap=G(torso,s*(D.cw/2+A.off),D.top-.7,.1);
   const key=s>0?'l':'r';
-  const {el,hand}=buildArm(A,ap,s,K);detailArm(A,ap,el,s,K);
+  const {el,hand}=buildArm(A,ap,s,K);R._rec=1;detailArm(A,ap,el,s,K);detail2Arm(A,ap,el,s,K);R._rec=0;
   const def=getPart(key==='r'?'wr':'wl',b[key==='r'?'wr':'wl']);
-  R.arms[key]={ap,el,hand,s,def,kick:0,...buildWeapon(hand,def,M,add,G,K)};
+  R.arms[key]={ap,el,hand,s,def,kick:0,...buildWeapon(hand,def,M,add,G,K)};R._rec=1;detail2Weapon(hand,def,K,R.arms[key]);R._rec=0;
  }
  // frame space has +x on the mech's left: the left-shoulder slot uses the mirrored mount, the right-shoulder slot the original one
  const fit={hw:HEAD_HW[H.id]||1.1,armTop:D.top-.7+(ARM_TOP[A.id]||1.3)};
- {const mir=G(torso);mir.scale.x=-1;R.sh={def:SH,...buildShoulder(SH,mir,D,K,fit)}}
+ const mir=G(torso);mir.scale.x=-1;R.sh={def:SH,...buildShoulder(SH,mir,D,K,fit)};
  R.sh2={def:SH2,...buildShoulder(SH2,torso,D,K,fit)};
- R.bg=G(torso,0,D.top-1.7,-(D.cd/2+.45));buildBooster(B,R.bg,K);detailBooster(B,R.bg,K);R.cd=D.cd;
+ for(const sh of[R.sh,R.sh2])if(sh.def.type!=='none'&&sh.muzzle){let g=sh.muzzle;while(g.parent&&g.parent!==torso&&g.parent!==mir)g=g.parent;if(g!==sh.muzzle){R._rec=1;detail2Shoulder(sh.def,g,K,sh);R._rec=0}}
+ R.bg=G(torso,0,D.top-1.7,-(D.cd/2+.45));buildBooster(B,R.bg,K);R._rec=1;detailBooster(B,R.bg,K);detail2Booster(B,R.bg,K);R._rec=0;R.cd=D.cd;
  // attitude thrusters on the core and hips (+x left, +y up, +z forward)
  for(const s of[-1,1]){
   K.thr.push([torso,s*(D.cw/2+.35),D.top+.35,-.35, s,0,0, .9]);
@@ -1552,7 +1555,7 @@ function buildRig(b){
  R.base={a:M.a.color.clone(),b:M.b.color.clone()};
  if(SH.type==='shield'||SH2.type==='shield'){const sh=new THREE.Mesh(GEO.sph,M.shield);sh.scale.setScalar(R.height*.62);sh.position.y=R.height*.5;sh.visible=false;R.root.add(sh);R.shield=sh}
  R.glintS=glintSamples(R,M,pal);
- mergeRig(R);
+ flattenDetail(R);mergeRig(R);
  return R;
 }
 
@@ -2325,6 +2328,8 @@ function detailCore(C,q,D,K){
  case'anvil':case'escort':case'patrol':case'heron':case'brace':case'battalion':case'redoubt':case'grenadier':case'harrier':case'scout':case'radiator':case'landship':
   for(const s of[-1,1]){K.turbine(q,s*.95,2.7,-D.cd/2-.02,.45,'z',-1);if(C.shape!=='brace')K.intake(q,s*(D.cw/2-(C.shape==='anvil'?-.2:.1)),3,-.4,.8,.45,s*PI/2,2)}
   K.circuit(q,0,1.6,D.cd/2-.1,1.1,.45,0,C.shape.length);break;
+ case'lattice':case'fortress':break;   // detailed in their own build
+ case'hex':for(const s of[-1,1])K.turbine(q,s*.95,2.6,-1.52,.48,'z',-1);break;
  default: // mid
   for(const s of[-1,1]){K.turbine(q,s*.95,2.6,-2.62,.48,'z',-1);K.intake(q,s*1.98,3.05,.45,.8,.45,s*1.42,2)}K.circuit(q,0,2.05,1.38,1.2,.5,0,2);
  }
@@ -2368,7 +2373,1167 @@ function detailBooster(B,bg,K){
  K.circuit(bg,0,1.1,-.62,.8,.9,Math.PI,B.shape.length+2);
  for(const s of[-1,1])K.pipe(bg,[s*.9,.9,.4],[s*1.1,-.4,-.4],.08);
 }
+// ---------------------------------------------------------------- second detail pass (per part)
+function detail2Head(H,hd,K){
+ const {M,add,G,R}=K;const PI=Math.PI;
+ // mount: group at a surface point whose local +z is the outward normal (outer group yaws, inner pitches; local y stays roughly up)
+ const mnt=(x,y,z,nx,ny,nz)=>{const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;const o=G(hd,x,y,z);o.rotation.y=Math.atan2(nx,nz);const g=G(o);g.rotation.x=-Math.asin(clamp(ny,-1,1));return g};
+ // flat louvred vent plate (half sunk into the surface)
+ const vent=(P,w,h,n=3)=>{const g=mnt(...P);add(g,GEO.box,M.dark,w,h,.06);
+  for(let i=0;i<n;i++)add(g,GEO.box,M.f,w*.9,.035,h/n*.75,0,-h/2+h*(i+.5)/n,.035,-.7);
+  for(const e of[-1,1])add(g,GEO.box,M.pipe,w+.05,.035,.08,0,e*(h/2+.012),.012);return g};
+ // small sensor blister: dark housing ring + glass dome
+ const blister=(P,r)=>{const g=mnt(...P);add(g,GEO.cylZ,M.f,r,r,.08,0,0,.01);add(g,GEO.sph,M.glass,r*.72,r*.72,r*.45,0,0,.05);return g};
+ // row of rivets from a to b
+ const rv=(a,b,n,sz=.055)=>{const p=[];for(let i=0;i<n;i++){const t=n>1?i/(n-1):.5;p.push([lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)])}K.bolts(hd,p,sz)};
+ // whip antenna on a short base; returns the pivot group (for nodding)
+ const ant=(x,y,z,len,tilt=0,par=hd)=>{add(par,GEO.cyl,M.f,.07,.07,.07,x,y+.02,z);const g=G(par,x,y+.05,z);g.rotation.x=tilt;
+  add(g,GEO.pipe,M.chrome,.018,len,.018,0,len/2,0);add(g,GEO.oct,M.t,.05,.05,.05,0,len,0);return g};
+ // point + normal on a sloped top face running from (y0,z0) to (y1,z1) (prism keels)
+ const slope=(x,y0,z0,y1,z1,t)=>{const dy=y1-y0,dz=z1-z0,L=Math.hypot(dy,dz);return[x,y0+dy*t,z0+dz*t,0,dz/L,-dy/L]};
+ // point + normal on a face of taperInv / taper(top=1) block (centre c, scale sx,sy,sz); face 'x'|'z', side s, height y, lateral offset u
+ const ti=(cx,cy,cz,sx,sy,sz,face,s,y,u=0,top=0)=>{const v=(y-cy)/sy+.5,k=top?.5-.203*v:.297+.203*v;
+  if(face==='z'){const a=.203*sz/sy*(top?1:-1);return[cx+u,y,cz+s*sz*k,0,a,s]}
+  const a=.203*sx/sy*(top?1:-1);return[cx+s*sx*k,y,cz+u,s,a,0]};
+ // centroid + normal of one face of an octahedron block (centre c, half-extents a, octant signs sx,sy,sz)
+ const octF=(c,a,sx,sy,sz)=>[c[0]+sx*a[0]/3,c[1]+sy*a[1]/3,c[2]+sz*a[2]/3,sx/a[0],sy/a[1],sz/a[2]];
+ switch(H.shape){
+ case'visor':{ // slim wedge: back exhaust grille, side sensor pods, rivets, top rangefinder housing
+  vent([0,.22,-.385,0,0,-1],.55,.3,3);
+  for(const s of[-1,1]){add(hd,GEO.box,M.f,.08,.2,.34,s*.575,.5,-.12);add(hd,GEO.box,M.glass,.03,.07,.12,s*.62,.53,.0);rv([s*.56,.29,.0],[s*.56,.29,.45],3,.05)}
+  {const g=mnt(...slope(0,.9,-.378,.2,1.354,.3));add(g,GEO.box,M.f,.34,.2,.1,0,0,.03);add(g,GEO.box,M.glass,.24,.03,.06,0,-.1,.05);add(g,GEO.box,M.pipe,.38,.03,.03,0,.08,.08)}
+  break}
+ case'mono':{ // diamond head: exhaust grilles on the upper back faces, chin sensors, antenna, visor-band rivets
+  const c=[0,.25,0],a=[1.06,.78,1.2];
+  for(const s of[-1,1]){vent(octF(c,a,s,1,-1),.32,.2,2);blister(octF(c,a,s,-1,1),.09);K.bolts(hd,[[s*.62,.12,.885],[s*.62,.28,.885]],.05)}
+  {const p=octF(c,a,-1,1,-1);ant(p[0]-.08,p[1]-.06,p[2]-.06,.75,-.25)}
+  break}
+ case'vfin':{ // gundam-style: rear grille, cheek vents behind the ear sensors, side rivets, blade antenna
+  const T=[0,.25,0,1.2,1.05,1.35];
+  vent(ti(...T,'z',-1,.35),.5,.28,3);
+  for(const s of[-1,1]){vent(ti(...T,'x',s,.32,-.38),.3,.2,2);const p=ti(...T,'x',s,.02);rv([p[0],.02,-.3],[p[0],.02,.25],3,.05)}
+  add(hd,GEO.box,M.f,.16,.05,.34,0,.785,-.42);add(hd,GEO.box,M.f,.04,.36,.2,0,.94,-.5,-.3);add(hd,GEO.box,M.chrome,.05,.04,.22,0,1.1,-.55,-.3);
+  break}
+ case'compound':{ // wide insect head: brow hood over the eye cluster, top sensor blisters, rivets, antenna brackets
+  add(hd,GEO.box,M.f,1.72,.05,.2,0,.55,.79);
+  rv([-.6,.655,.25],[.6,.655,.25],4,.05);
+  for(const s of[-1,1]){blister([s*.55,.65,-.3,0,1,0],.12);add(hd,GEO.box,M.f,.28,.12,.14,s*.9,.33,-.2);K.bolts(hd,[[s*1.04,.33,-.2]],.06);vent(ti(0,.25,0,1.9,.8,1.3,'x',s,.28,.15),.4,.2,2)}
+  break}
+ case'crest':{ // centre crest: crest-root rivets, hydraulic brace under the crest overhang, twin rear grilles, chin rivets
+  for(const s of[-1,1]){rv([s*.1,.805,-.45],[s*.1,.805,.45],3,.05);vent(ti(0,.25,0,1.2,1.1,1.4,'z',-1,.3,s*.33),.26,.26,3);rv([s*.58,-.15,.1],[s*.58,-.15,.45],2,.05)}
+  K.piston(hd,[0,.25,-.54],[0,.36,-1.1],.045);
+  break}
+ case'halo':{ // halo ring clamps, rear hub collar, exhaust grilles, chin sensors
+  for(const[x,y]of[[1,.6],[-1,.6],[0,1.6],[0,-.4]])add(hd,GEO.box,M.f,.16,.16,.2,x,y,-.75);
+  add(hd,GEO.cylZ,M.f,.1,.1,.12,0,.6,-.38);add(hd,GEO.cylZ,M.chrome,.12,.12,.03,0,.6,-.44);
+  const c=[0,.2,0],a=[.778,.707,.849];
+  for(const s of[-1,1]){vent(octF(c,a,s,1,-1),.26,.18,2);blister(octF(c,a,s,-1,1),.08)}
+  break}
+ case'mandible':{ // insect: mandible actuator rams, stalk collars, side grilles, rear grille, spine rivets
+  for(const s of[-1,1]){K.piston(hd,[s*.6,.08,-.12],[s*.56,-.18,.36],.04);add(hd,GEO.cyl,M.f,.1,.08,.1,s*.32,.535,.1);vent([s*.555,.32,-.22,s,0,0],.2,.18,2)}
+  vent([0,.2,-.375,0,0,-1],.55,.32,3);
+  K.bolts(hd,[slope(0,.65,-.37,.2,1.189,.08),slope(0,.65,-.37,.2,1.189,.5),slope(0,.65,-.37,.2,1.189,.66)].map(p=>[p[0],p[1]+.01,p[2]]),.05);
+  break}
+ case'saber':{ // sleek blade head: back grille, side vents, spine rivets
+  vent([0,.12,-.32,0,0,-1],.45,.32,3);
+  for(const s of[-1,1])vent([s*.455,.15,.1,s,0,0],.32,.2,2);
+  K.bolts(hd,[.15,.32,.48].map(t=>{const p=slope(0,.7,-.314,.2,1.677,t);return[0,p[1]+.01,p[2]]}),.05);
+  break}
+ case'dome':{ // sweeping sensor on the cap, cap ring bolts, rear grilles, ear antenna
+  const sw=G(hd,0,1.2,0);add(sw,GEO.cyl,M.f,.16,.1,.16,0,.05,0);add(sw,GEO.box,M.b,.46,.16,.2,0,.17,0);
+  add(sw,GEO.box,M.glass,.3,.07,.03,0,.18,.105);for(const s of[-1,1])add(sw,GEO.box,M.f,.04,.18,.22,s*.24,.17,0);
+  K.osc(sw,'rotation','y',.8,.55);
+  const bp=[];for(let k=0;k<4;k++)for(const d of[-.25,.25]){const ang=k*PI/2+d;bp.push([Math.sin(ang)*.74,.785,Math.cos(ang)*.74])}K.bolts(hd,bp,.06);
+  for(const ang of[PI*.875,PI*1.125])vent([Math.sin(ang)*.79,.3,Math.cos(ang)*.79,Math.sin(ang),0,Math.cos(ang)],.36,.4,3);
+  ant(.9,.69,-.05,.8,-.15);
+  break}
+ case'radar':{ // radar mast base housing, mast cable, brow hood, side grilles, face rivets
+  add(hd,GEO.box,M.f,.3,.12,.3,0,.64,-.2);K.bolts(hd,[[-.11,.705,-.09],[.11,.705,-.09],[-.11,.705,-.31],[.11,.705,-.31]],.045);
+  K.pipe(hd,[.12,.62,-.32],[.32,.4,-.61],.04,M.f);
+  add(hd,GEO.box,M.f,.9,.05,.16,0,.52,.66);
+  for(const s of[-1,1]){vent([s*.555,.25,-.15,s,0,0],.5,.28,3);K.bolts(hd,[[s*.45,.5,.605],[s*.45,-.1,.605]],.05)}
+  break}
+ case'skull':{ // jaw hinge bolts, cheek vents, rear grille, cranial rivets
+  for(const s of[-1,1]){vent(ti(0,.08,.15,1,.85,1.1,'x',s,.12,-.07),.28,.18,2);
+   add(hd,GEO.cylX,M.f,.08,.1,.1,s*.38,0,.36);add(hd,GEO.cylX,M.chrome,.04,.045,.045,s*.43,0,.36)}
+  vent([0,.6,-.395,0,0,-1],.5,.22,2);
+  K.bolts(hd,[.15,.35,.55].map(t=>{const p=slope(0,.9,-.391,.6,1.081,t);return[0,p[1]+.01,p[2]]}),.05);
+  break}
+ case'helm':{ // helmet band rivets and vents, antenna base, visor hinges, rear grille
+  rv([-.55,.86,.58],[.55,.86,.58],4,.055);
+  for(const s of[-1,1]){vent([s*.68,.86,-.18,s,0,0],.5,.2,2);add(hd,GEO.cylX,M.chrome,.06,.07,.07,s*.59,.3,.68)}
+  add(hd,GEO.cyl,M.f,.09,.08,.09,.405,1.05,-.35);
+  vent(ti(0,.3,0,1.3,1.1,1.5,'z',-1,.35),.6,.3,3);
+  break}
+ case'lens':{ // rotating focus ring on the barrel, lens shade, side-plate rivets, cap blister + antenna
+  {const fr=G(hd,0,.25,.78);add(fr,GEO.cylZ,M.f,.45,.45,.12);for(let i=0;i<8;i++){const ang=i/8*TAU;add(fr,GEO.box,M.chrome,.07,.07,.13,Math.cos(ang)*.45,Math.sin(ang)*.45,0,0,0,ang)}R.spin.push({g:fr,spd:.3})}
+  add(hd,GEO.box,M.f,.6,.04,.34,0,.69,.93);
+  for(const s of[-1,1])K.bolts(hd,[[s*.785,.45,-.4],[s*.785,.45,.2],[s*.785,-.05,-.4],[s*.785,-.05,.2]],.055);
+  blister([-.4,.9,-.35,0,1,0],.12);ant(.45,.88,-.5,.6,-.2);
+  break}
+ case'shrike':{ // ear grilles, rear grille, top-plate rivets, whip antenna
+  for(const s of[-1,1]){add(hd,GEO.cylX,M.dark,.02,.16,.16,s*.735,.55,-.35);for(const dy of[-.08,0,.08])add(hd,GEO.box,M.pipe,.03,.03,.3,s*.745,.55+dy,-.35);
+   K.bolts(hd,[[s*.5,.855,.56],[s*.5,.795,.06]],.05)}
+  vent([0,.3,-.755,0,0,-1],.6,.3,3);
+  ant(-.62,.73,-.42,.7,-.3);
+  break}
+ case'hound':{ // nodding sensor whips behind the ears, snout nostril vents, side rivets, jaw ram
+  for(const s of[-1,1]){const g=ant(s*.2,.69,-.62,.55,-.3);K.osc(g,'rotation','x',.12,1.4,s>0?0:1.3);
+   vent([s*.318,.15,.9,s,0,.104],.28,.16,2);rv([s*.505,.45,-.6],[s*.505,.45,-.1],3,.05)}
+  K.piston(hd,[0,-.12,-.15],[0,-.07,.74],.04);
+  break}
+ case'canopy':{ // canopy sill frame and posts, rear grille, fairing rivets, chin sensors
+  add(hd,GEO.ring,M.f,.53,1.5,.694,0,.31,.15);
+  add(hd,GEO.box,M.f,.06,.14,.06,0,.71,.78);add(hd,GEO.box,M.f,.06,.26,.06,0,.65,-.55);
+  vent([0,0,-.755,0,0,-1],.7,.3,3);
+  for(const s of[-1,1]){K.bolts(hd,[[s*.685,.12,-.5],[s*.685,.12,-.2],[s*.685,-.02,-.5],[s*.685,-.02,-.2]],.045);blister([s*.42,-.17,.75,0,0,1],.08)}
+  break}
+ case'bunker':{ // cooling fans in the side plates, roof hatch, roof rivets, periscope collar, chin grille
+  for(const s of[-1,1]){K.turbine(hd,s*.94,.25,0,.24,'x',s,.8);add(hd,GEO.box,M.f,.03,.5,.04,s*.975,.25,0);add(hd,GEO.box,M.f,.03,.04,.5,s*.975,.25,0);
+   K.bolts(hd,[[s*.935,.6,-.5],[s*.935,.6,.5],[s*.935,-.1,-.5],[s*.935,-.1,.5]],.06)}
+  K.bolts(hd,[[-.7,1.02,-.7],[.7,1.02,-.7],[-.7,1.02,.7],[.7,1.02,.7]],.07);
+  add(hd,GEO.box,M.f,.5,.05,.5,-.3,1.03,.15);add(hd,GEO.box,M.chrome,.2,.04,.04,-.3,1.065,.25);
+  add(hd,GEO.box,M.f,.32,.07,.32,.4,1.04,-.3);
+  vent([0,-.15,.855,0,0,1],.9,.18,4);
+  break}
+ case'ridge':{ // lens hoods over the twin optics, crest rivets, rear grille, crest antenna, chin rivets
+  for(const s of[-1,1]){add(hd,GEO.box,M.f,.34,.05,.2,s*.28,.565,.8);rv([s*.115,.92,-.55],[s*.115,.92,.45],3,.05);K.bolts(hd,[[s*.505,-.18,.2],[s*.505,-.18,.6]],.05)}
+  vent(ti(0,.28,0,1.25,1,1.5,'z',-1,.33),.55,.28,3);
+  ant(0,1.12,-.75,.5,-.3);
+  break}
+ case'gunner':{ // sweeping roof sensor pod, antenna base, roof rivets, rear grille, chin-optic collar
+  {const g=G(hd,.4,.82,-.25);add(g,GEO.cyl,M.f,.12,.1,.12,0,.05,0);add(g,GEO.box,M.b,.36,.16,.22,0,.17,0);add(g,GEO.box,M.glass,.26,.08,.03,0,.18,.115);
+   for(const s of[-1,1])add(g,GEO.box,M.f,.04,.18,.18,s*.2,.17,0);K.osc(g,'rotation','y',.7,.6,.8)}
+  add(hd,GEO.cyl,M.f,.08,.06,.08,-.45,.85,-.4);
+  K.bolts(hd,[[-.65,.83,.55],[.65,.83,.55],[-.65,.83,-.65],[.65,.83,-.65]],.055);
+  vent([0,.2,-.655,0,0,-1],.8,.3,3);
+  add(hd,GEO.ringV,M.f,.3,.27,.5,0,-.05,.67);
+  break}
+ case'pathfinder':{ // mast collar and elevation ram, side-plate rivets, top blister, whip antenna
+  add(hd,GEO.cyl,M.f,.1,.08,.1,.32,.6,-.2);K.piston(hd,[.32,.57,.12],[.32,1.0,-.33],.03);
+  for(const s of[-1,1])K.bolts(hd,[[s*.605,.32,-.3],[s*.605,.32,.2],[s*.605,.08,-.3],[s*.605,.08,.2]],.045);
+  blister([-.25,.557,.1,0,1,.105],.11);ant(-.3,.6,-.4,.6,-.2);
+  break}
+ case'gasmask':{ // brim rivets, rear breather grille, canister straps, ear valves, antenna
+  K.bolts(hd,[[-.6,.66,.585],[0,.66,.585],[.6,.66,.585]],.055);
+  vent([0,.486,-.75,0,.417,-1.93],.4,.22,3);
+  for(const s of[-1,1]){const ax=Math.sin(s*.65),az=Math.cos(.65);add(hd,GEO.ringV,M.chrome,.21,.21,.5,s*.4-ax*.08,-.05,.72-az*.08,0,s*.65,0);
+   add(hd,GEO.cylX,M.f,.1,.13,.13,s*.67,.32,-.05);add(hd,GEO.cylX,M.chrome,.03,.08,.08,s*.735,.32,-.05)}
+  ant(-.45,.75,-.45,.7,-.15);
+  break}
+ case'periscope':{ // mast base plate, telescoping stage collars, scope hood, head vents, side-box rivets
+  add(hd,GEO.box,M.f,.42,.06,.42,0,.475,-.2);K.bolts(hd,[[-.16,.51,-.04],[.16,.51,-.04],[-.16,.51,-.36],[.16,.51,-.36]],.045);
+  add(hd,GEO.box,M.f,.32,.08,.3,0,.95,-.2);add(hd,GEO.box,M.f,.32,.08,.3,0,1.4,-.2);
+  add(hd,GEO.box,M.f,.38,.04,.14,0,1.925,.28);
+  for(const s of[-1,1]){vent([s*.225,1.8,-.12,s,0,0],.3,.16,2);K.bolts(hd,[[s*.86,.25,-.3],[s*.86,.25,.3],[s*.86,.05,-.3],[s*.86,.05,.3]],.045)}
+  break}
+ case'owl':{ // angled brow plates, ear-tuft collars, rear and cheek vents, jaw rivets
+  const T=[0,.32,0,1.55,.95,1.25];
+  for(const s of[-1,1]){add(hd,GEO.box,M.f,.48,.06,.2,s*.36,.785,.66,0,0,s*-.15);add(hd,GEO.cyl,M.f,.15,.08,.15,s*.48,.8,-.1);
+   vent(ti(...T,'x',s,.42,-.12),.32,.2,2);K.bolts(hd,[[s*.605,-.2,-.3],[s*.605,-.2,.1]],.05)}
+  vent(ti(...T,'z',-1,.4),.7,.28,3);
+  break}
+ default:{ // horn: horn root collar, rear grille, side rivets, spine rivets
+  if(H.shape!=='horn')break;
+  add(hd,GEO.cylZ,M.f,.13,.13,.1,0,.512,.808,-.45);
+  vent([0,.3,-.32,0,0,-1],.5,.35,3);
+  for(const s of[-1,1]){rv([s*.505,.45,-.1],[s*.505,.45,.2],2,.05);K.bolts(hd,[.2,.4].map(t=>{const p=slope(0,.85,-.314,.25,1.677,t);return[s*.3,p[1]+.01,p[2]]}),.05)}
+ }
+ }
+}
+function detail2Core(C,q,D,K){
+ const {M,add,G}=K;const PI=Math.PI,HP=PI/2;
+ // face frame: outer tilt (tx about x, tz about z), inner yaw ry; local +z is the surface normal, local z=0 the surface
+ const F=(x,y,z,ry=0,tx=0,tz=0)=>{const o=G(q,x,y,z);o.rotation.set(tx,0,tz);const g=G(o);g.rotation.y=ry;return g};
+ const TOP=(x,y,z)=>F(x,y,z,0,-HP);
+ // taperInv body (narrow bottom): half extents at height y and face tilts
+ const TI=(w,h,d,yc)=>({x:y=>w/2*(.594+.406*((y-yc)/h+.5)),z:y=>d/2*(.594+.406*((y-yc)/h+.5)),tx:Math.atan(.203*w/h),tz:Math.atan(.203*d/h)});
+ const side=(t,s,y,z)=>F(s*t.x(y),y,z,s*HP,0,-s*t.tx);
+ const front=(t,x,y)=>F(x,y,t.z(y),0,t.tz,0);
+ // --- kit (all built facing +z of a face frame)
+ const hatch=(g,w,h,mat=M.b)=>{add(g,GEO.box,M.f,w+.1,h+.1,.06,0,0,.03);add(g,GEO.box,mat,w,h,.08,0,0,.08);
+  for(const x of[-w*.3,w*.3])add(g,GEO.cylX,M.chrome,.16,.07,.07,x,h/2+.03,.12);
+  add(g,GEO.box,M.chrome,w*.36,.05,.05,0,-h*.26,.22);for(const x of[-w*.15,w*.15])add(g,GEO.box,M.dark,.04,.04,.1,x,-h*.26,.16)};
+ const rail=(g,x,y,len,vert)=>{const r=G(g,x,y,0);if(vert)r.rotation.z=HP;add(r,GEO.box,M.chrome,len,.06,.06,0,0,.2);
+  for(const d of[-1,1])add(r,GEO.box,M.f,.07,.07,.2,d*len*.42,0,.1)};
+ const louvre=(g,w,h,n)=>{add(g,GEO.box,M.dark,w,h,.08,0,0,.04);
+  for(let i=0;i<n;i++)add(g,GEO.box,M.f,w*.92,h/n*.8,.03,0,-h/2+h*(i+.5)/n,.11,.7)};
+ const plate=(g,w,h,mat=M.b)=>{add(g,GEO.box,mat,w,h,.1,0,0,.05);
+  K.bolts(g,[[-w/2+.11,h/2-.11,.11],[w/2-.11,h/2-.11,.11],[-w/2+.11,-h/2+.11,.11],[w/2-.11,-h/2+.11,.11]],.08)};
+ const lug=g=>{add(g,GEO.box,M.f,.32,.4,.05,0,0,.025);add(g,GEO.box,M.f,.09,.3,.28,0,0,.17);add(g,GEO.cylX,M.dark,.11,.08,.08,0,0,.2)};
+ // breathing louvre flap: hinged along its top edge, swings out from the face
+ const flap=(g,w,h,ph)=>{louvre(g,w,h,3);const f=G(g,0,h/2+.02,.16);f.rotation.x=-.3;
+  add(f,GEO.box,M.b,w+.06,h+.04,.05,0,-h/2-.02,.03);add(f,GEO.cylX,M.chrome,w*.9,.05,.05,0,0,0);K.osc(f,'rotation','x',.2,1.1,ph)};
+ // sweeping searchlight on a short mount
+ const lamp=(x,y,z,ph)=>{add(q,GEO.box,M.f,.32,.3,.18,x,y,z+.09);const g=G(q,x,y,z+.2);add(g,GEO.cyl,M.f,.1,.12,.1,0,0,0);
+  add(g,GEO.cylZ,M.f,.2,.2,.36,0,0,.16);add(g,GEO.cylZ,M.glass,.16,.16,.04,0,0,.35);add(g,GEO.box,M.t,.42,.05,.3,0,.22,.16);
+  K.osc(g,'rotation','y',.38,.55,ph)};
+ const lampTop=(x,y,z,ph)=>{add(q,GEO.cyl,M.f,.16,.2,.16,x,y+.1,z);const g=G(q,x,y+.36,z);
+  add(g,GEO.cylZ,M.f,.2,.2,.34,0,0,.02);add(g,GEO.cylZ,M.glass,.16,.16,.04,0,0,.2);add(g,GEO.box,M.t,.42,.05,.3,0,.22,.02);
+  K.osc(g,'rotation','y',.6,.45,ph)};
+ switch(C.shape){
+ case'light':{const t=TI(3.6,2.5,2.6,2.2);
+  for(const s of[-1,1]){louvre(side(t,s,1.8,-.3),.9,.42,3);
+   K.pipe(q,[s*(t.x(1.3)+.06),1.3,.45],[s*(t.x(2.55)+.06),2.55,.45],.045,M.dark)}
+  hatch(front(t,0,2.15),.5,.55);break}
+ case'heavy':
+  for(const s of[-1,1]){plate(F(s*3.6,2.05,.35,s*HP),1.7,1.0);
+   K.piston(q,[s*3.76,1.55,-1.05],[s*3.76,3.05,-1.5],.09);
+   rail(F(s*3.05,2.05,2.0),0,0,.9,true);lug(TOP(s*3.05,4.8,1.5));
+   K.pipe(q,[s*.75,1.5,-2.0],[s*2.3,1.5,-2.0],.11,M.f)}
+  break;
+ case'vector':{const hw=z=>2.1*(1-.364*((z+1.9)/3.8));
+  for(const s of[-1,1]){louvre(F(s*hw(-.9),2.25,-.9,s*(HP-.2)),.9,.55,3);
+   K.pipe(q,[s*2.0,2.25,.24],[s*1.9,2.3,-.42],.07);
+   louvre(F(s*.95,3.1,1.9),.48,.42,2)}
+  break}
+ case'spine':
+  for(const y of[1.25,1.62])add(q,GEO.box,M.f,1.02,.14,1.02,0,y,-.2);
+  for(const s of[-1,1]){add(q,GEO.cyl,M.pipe,.15,.72,.15,s*.62,1.75,-.36);for(const y of[1.39,2.11])add(q,GEO.cyl,M.chrome,.17,.06,.17,s*.62,y,-.36);
+   add(q,GEO.box,M.f,.2,.12,.12,s*.5,1.75,-.36);K.pipe(q,[s*.72,3.66,-.32],[s*.47,2.4,-.48],.045,M.dark,false)}
+  break;
+ case'barrel':
+  for(const s of[-1,1]){plate(F(s*1.2,3.0,1.91,s*.32),.75,1.15);
+   const a=[s*2.37,1.6,1.31],m=[s*3.04,1.6,0],b=[s*2.76,1.6,-.56];K.pipe(q,a,m,.12,M.f);K.pipe(q,m,b,.12,M.f,false);
+   add(q,GEO.box,M.chrome,.16,.32,.34,s*3.06,1.6,0);lug(TOP(s*1.6,4.8,1.05))}
+  break;
+ case'reactor':
+  for(const s of[-1,1]){for(let i=0;i<5;i++)add(q,GEO.box,M.f,.32,1.1,.06,s*2.46,2.6,-.65-i*.19);
+   K.pipe(q,[s*2.42,3.3,-.5],[s*2.42,3.3,-1.5],.06);
+   K.pipe(q,[s*.55,1.82,1.72],[s*1.5,1.45,1.68],.08)}
+  break;
+ case'turbine':
+  for(const s of[-1,1]){for(const d of[-.4,.4])add(q,GEO.box,M.chrome,.05,1.42,.05,s*1.25+d,2.75,1.64);
+   plate(F(s*2.4,2.0,.55,s*HP),.9,.8)}
+  louvre(F(0,1.65,1.5),2.6,.38,3);break;
+ case'lattice':
+  for(const x of[-1.3,1.3])for(const z of[-.9,.9])for(const y of[1.46,3.62])add(q,GEO.box,M.b,.44,.32,.44,x,y,z);
+  K.bolts(q,[[-1.3,3.62,1.13],[1.3,3.62,1.13],[-1.3,1.46,1.13],[1.3,1.46,1.13]],.07);
+  for(const s of[-1,1]){K.pipe(q,[s*1.53,3.72,.75],[s*1.53,1.35,.75],.05,M.dark);add(q,GEO.box,M.chrome,.14,.08,.14,s*1.5,2.6,.78)}
+  break;
+ case'fortress':{
+  add(q,GEO.box,M.f,.22,.62,.22,1.75,5.1,1.1);const p=G(q,1.75,5.41,1.1);
+  add(p,GEO.box,M.b,.42,.3,.5,0,.15,0);add(p,GEO.box,M.glass,.3,.12,.04,0,.18,.26);add(p,GEO.box,M.t,.46,.05,.54,0,.32,0);K.osc(p,'rotation','y',.5,.45);
+  hatch(F(1.65,2.1,1.8),.85,1.0);plate(F(-1.65,2.1,1.8),.85,1.0);
+  for(const s of[-1,1])rail(F(s*2.5,2.1,-1.25,s*HP),0,0,.8,true);
+  break}
+ case'hex':
+  for(const s of[-1,1]){K.pipe(q,[s*1.0,4.08,1.58],[s*1.95,4.08,1.58],.07);K.pipe(q,[s*1.95,4.08,1.58],[s*2.18,4.08,1.35],.07,M.pipe,false);
+   K.pipe(q,[s*2.18,4.08,1.35],[s*2.18,3.75,.7],.07);
+   add(q,GEO.cyl,M.pipe,.2,.8,.2,s*2.32,1.85,-1.2);for(const y of[1.45,2.25])add(q,GEO.cyl,M.chrome,.22,.06,.22,s*2.32,y,-1.2)}
+  louvre(F(0,1.5,1.5),2.0,.26,2);break;
+ case'anvil':
+  for(const s of[-1,1]){lug(TOP(s*1.5,4.6,1.2));plate(F(s*1.7,2.15,1.6),.75,.9);rail(F(s*1.7,3.15,1.6),0,0,.7);
+   K.pipe(q,[s*2.73,1.85,.9],[s*2.73,1.85,-1.3],.09,M.f)}
+  break;
+ case'escort':{const t=TI(4.2,2.8,3,2.7);
+  for(const s of[-1,1]){const g=side(t,s,2.05,.25);add(g,GEO.cylZ,M.dark,.4,.4,.06,0,0,.03);K.turbine(g,0,0,.1,.32,'z',1,1.1);
+   rail(front(t,s*1.25,3.2),0,0,.7,true)}
+  break}
+ case'patrol':
+  lamp(-.95,2.15,1.6,0);louvre(F(.95,2.15,1.6),.5,.45,2);
+  for(const s of[-1,1]){louvre(F(s*2.45,2.0,-.45,s*HP),.9,.5,3);rail(F(s*1.3,4.45,.05,s*HP),0,0,.7)}
+  break;
+ case'heron':{const t=TI(4,2.6,2.8,2.9);
+  for(const s of[-1,1]){K.piston(q,[s*.72,.95,.3],[s*1.05,1.62,.3],.07);louvre(side(t,s,2.55,-.2),.8,.45,3)}
+  hatch(front(t,.95,2.35),.55,.6);plate(front(t,-.95,2.35),.55,.6);break}
+ case'brace':
+  for(const s of[-1,1]){K.pipe(q,[s*2.62,1.55,1.55],[s*2.62,3.75,-1.55],.1,M.f,false);
+   for(const[y,z]of[[1.55,1.55],[3.75,-1.55]])add(q,GEO.box,M.f,.14,.3,.3,s*2.55,y,z);
+   for(const y of[1.4,4.3]){add(q,GEO.box,M.b,.36,.36,.36,s*2.45,y,1.8);K.bolts(q,[[s*2.45,y,2.0]],.08)}
+   louvre(F(s*2.4,1.85,-.9,s*HP),.8,.4,2);rail(F(s*1.75,2.8,1.7),0,0,.7,true)}
+  break;
+ case'battalion':
+  for(const s of[-1,1]){for(const d of[-.3,.3])add(q,GEO.box,M.chrome,.12,.18,.06,s*2.75+d,2.6,.63);
+   rail(F(s*3.25,2.25,-.2,s*HP),0,0,.7);
+   add(q,GEO.box,M.f,.3,.25,.2,s*1.75,1.62,1.6);add(q,GEO.cylX,M.chrome,.36,.08,.08,s*1.75,1.62,1.72);
+   lug(TOP(s*1.9,4.425,1.25))}
+  break;
+ case'redoubt':{
+  add(q,GEO.cyl,M.f,.18,.15,.18,1.7,5.02,.85);const r=G(q,1.7,5.1,.85);r.rotation.x=-HP;
+  add(r,GEO.cylZ,M.glass,.14,.14,.2,0,0,.1);add(r,GEO.box,M.hot,.13,.03,.13,0,.05,.1);add(r,GEO.cylZ,M.f,.17,.17,.04,0,0,.22);K.R.spin.push({g:r,spd:.9});
+  for(const s of[-1,1]){rail(F(s*3.0,2.6,1.95),0,0,.9,true);K.pipe(q,[s*3.53,1.7,1.4],[s*3.53,1.7,-1.4],.1,M.f);
+   lug(TOP(s*3.0,4.5,1.55));add(q,GEO.box,M.chrome,.58,.08,.58,s*1.6,5.0,-1.4)}
+  break}
+ case'grenadier':{const t=TI(4.4,2.9,3.2,2.75);
+  for(const y of[2.78,3.22])add(q,GEO.cyl,M.f,.07,.18,.07,-.5,y,1.82);
+  add(q,GEO.ringV,M.chrome,.17,.17,.6,0,3,2.12);for(const a of[0,HP])add(q,GEO.box,M.chrome,.3,.03,.03,0,3,2.12,0,0,a);
+  for(const s of[-1,1]){add(q,GEO.cyl,M.chrome,.2,.08,.2,s*1.3,5.1,-1.3);add(q,GEO.box,M.chrome,.1,.05,.05,s*1.3,5.69,-1.49);
+   const f=G(q,s*1.3,5.69,-1.48);f.rotation.x=-.4;add(f,GEO.cyl,M.f,.21,.03,.21,0,0,.18);K.osc(f,'rotation','x',.25,1.4,s>0?0:2);
+   louvre(F(s*2.3,2.1,.3,s*HP),.9,.45,3);rail(front(t,s*1.0,3.0),0,0,.6,true)}
+  break}
+ case'harrier':{const t=TI(3.8,2.6,2.8,2.6);
+  for(const s of[-1,1]){louvre(front(t,s*.75,2.2),.48,.4,2);louvre(F(s*2.04,2.35,.45,s*HP,0,s*.18),.7,.4,2)}
+  hatch(front(t,0,1.72),.6,.36);break}
+ case'scout':{
+  add(q,GEO.box,M.f,.34,.14,.3,0,1.62,1.5);const g=G(q,0,1.47,1.62);add(g,GEO.sph,M.f,.22,.22,.22);
+  add(g,GEO.cylZ,M.glass,.09,.09,.12,0,0,.2);add(g,GEO.box,M.t,.12,.06,.2,0,.2,0);K.osc(g,'rotation','y',.7,.7);
+  for(const s of[-1,1]){louvre(F(s*2.0,2.2,.2,s*HP,0,s*.1),.8,.4,2);K.pipe(q,[s*1.55,1.6,.45],[s*1.3,1.42,.98],.04,M.dark)}
+  break}
+ case'radiator':
+  for(const s of[-1,1]){add(q,GEO.box,M.dark,.6,.06,.45,s*1.4,4.76,.85);add(q,GEO.box,M.hot,.48,.02,.3,s*1.4,4.795,.85);
+   add(q,GEO.cylX,M.chrome,.6,.04,.04,s*1.4,4.81,.61);const f=G(q,s*1.4,4.81,.61);f.rotation.x=-.35;
+   add(f,GEO.box,M.b,.64,.04,.5,0,.02,.25);K.osc(f,'rotation','x',.25,1,s>0?0:1.7);
+   K.pipe(q,[s*1.62,1.55,1.75],[s*2.3,1.5,1.18],.08)}
+  break;
+ case'landship':
+  lampTop(-2.0,4.75,.9,0);
+  for(const s of[-1,1]){for(const x of[1.4,2.2])add(q,GEO.box,M.chrome,.04,.4,.04,s*x,4.95,1.6);add(q,GEO.box,M.chrome,.9,.04,.04,s*1.8,5.15,1.6);
+   hatch(F(s*3.4,2.35,-.35,s*HP),.9,1.0);K.pipe(q,[s*1.42,4.76,-1.45],[s*1.42,5.55,-1.45],.05)}
+  break;
+ case'mid':{const t=TI(4.6,3,3.2,2.75);
+  for(const s of[-1,1]){flap(side(t,s,2.05,-.55),.95,.5,s>0?0:1.5);lug(TOP(s*1.35,4.25,.85))}
+  break}
+ }
+}
+function detail2Arm(A,ap,el,s,K){
+ const {M,add,G}=K,P=Math.PI;
+ // [upper kind (t taper / b box / c round / p twin rods), upper width, pad bottom y, forearm kind (tz taperZ / b box / h hex / c round), fw, fh, len, centre z, elbow joint half size, joint kind (o oct / b box / x cross cylinder), class 0 light 1 mid 2 heavy, skip flags]
+ // skip flags: T top detail, W wrist rams, V inner vent, R bearing collar, C upper cables, H elbow hinge
+ const T={
+  reed:['t',.6,-.25,'tz',.8,.8,2.6,1.05,.49,'o',0,''],
+  forge:['t',.85,-.4,'tz',1.25,1.25,2.6,1.05,.7,'o',1,''],
+  talon:['b',1.1,-.45,'b',1.6,1.6,2.6,1.1,.6,'b',2,'T'],
+  javelin:['t',.75,-.3,'tz',1,1,3.2,1.4,.6,'o',0,''],
+  piston:['p',.4,-.6,'h',.6,.6,2.6,1.1,.55,'x',1,'RW'],
+  warden:['b',.9,-.5,'b',1.2,1.2,2.4,1,.5,'b',2,''],
+  ghost:['t',.5,-.42,'tz',.75,.75,2.4,1,.42,'o',0,'R'],
+  sentinel:['b',1,-.05,'tz',1.5,1.5,2.8,1.05,.55,'b',2,'T'],
+  mantis:['t',.55,-.3,'tz',.7,.75,2.8,1.15,.42,'o',0,''],
+  turbo:['t',.7,-.3,'b',1.3,1.2,2.4,1,.6,'o',1,'W'],
+  ogre:['b',1.2,-.3,'b',1.9,1.8,2.6,1.1,.7,'b',2,'T'],
+  cobalt:['b',.95,-.35,'b',1.3,1.25,2.5,1.05,.525,'b',1,''],
+  lynx:['t',.65,-.25,'tz',.95,.95,2.6,1.05,.57,'o',0,''],
+  bracer:['b',.95,-.35,'tz',1.3,1.3,2.6,1.05,.525,'b',1,''],
+  helix:['c',.42,-.65,'c',.62,.62,2.5,1.05,.5,'x',1,'RV'],
+  vigil:['b',.9,-.3,'tz',1.15,1.15,2.6,1.1,.67,'o',1,'T'],
+  trooper:['b',.95,-.35,'b',1.3,1.3,2.5,1.05,.525,'b',1,''],
+  howitzer:['b',1.2,-.45,'b',1.8,1.6,2.7,1.15,.65,'b',2,'TW'],
+  lineman:['b',1,-.3,'tz',1.35,1.35,2.6,1.05,.55,'b',1,'VT'],
+  recon:['b',.85,-.25,'tz',1.1,1.1,2.5,1.05,.64,'o',1,''],
+  falcon:['t',.65,-.2,'tz',.88,.88,2.6,1.05,.53,'o',0,''],
+  engineer:['b',.9,-.3,'b',1.15,1.15,2.5,1.05,.67,'o',1,'V'],
+  dozer:['b',1.15,-.35,'b',1.6,1.5,2.6,1.1,.625,'b',2,'T']
+ };
+ const t=T[A.shape];if(!t)return;
+ const [uk,uw,pb,fk,fw,fh,fl,fc,j,jk,cls,skip]=t,no=f=>skip.includes(f);
+ const k=z=>clamp((z-(fc-fl/2))/fl,0,1);
+ // upper-arm half size at height y (ap frame), forearm half height/width at z (el frame)
+ const uh=y=>uk==='t'?uw*(.297+.203*clamp((y+2.3)/2.2,0,1)):uk==='b'?uw/2:uk==='p'?.2:uw;
+ const fH=z=>fk==='tz'?fh/2*(1-.364*k(z)):fk==='h'?fh*.95:fk==='c'?fh:fh/2;
+ const fW=z=>fk==='tz'?fw/2*(1-.364*k(z)):fk==='h'?fw*.866:fk==='c'?fw:fw/2;
+ const ram=(par,a,b,r)=>K.piston(par,a,b,r);
+ // a pumping ram: fixed dark sleeve, chrome rod that slides along z in and out of it
+ const pump=(par,x,y,z0,len,r,amp,f,ph)=>{add(par,GEO.hexZ,M.dark,r*1.5,r*1.5,len,x,y,z0+len/2);add(par,GEO.hexZ,M.chrome,r*1.8,r*1.8,.08,x,y,z0+len-.02);
+  const g=G(par,x,y,z0+len);add(g,GEO.cylZ,M.chrome,r*.8,r*.8,len*.9,0,0,len*.3);add(g,GEO.oct,M.chrome,r*2.6,r*2.6,r*2.6,0,0,len*.75);K.osc(g,'position','z',amp,f,ph);return g};
+
+ // ---- upper arm: cable bundle down the back face
+ if(!no('C')){
+  const y0=pb-.08,y1=-1.95,r=cls===2?.075:cls===1?.05:.035,dx=uk==='p'?.3:Math.min(.12,uh(y1)*.5);
+  if(cls===2){K.pipe(ap,[s*dx,y0,-(uh(y0)+r*.7)],[s*dx,y1,-(uh(y1)+r*.7)],r,M.pipe);K.pipe(ap,[-s*dx,y0,-(uh(y0)+.04)],[-s*dx,y1,-(uh(y1)+.04)],.05,M.dark,false)}
+  else for(const sx of uk==='p'?[-1,1]:[1,-.4]){const rr=sx===1?r:r*.75;K.pipe(ap,[s*dx*sx,y0,-(uh(y0)+rr*.7)],[s*dx*sx,y1,-(uh(y1)+rr*.7)],rr,M.dark,false)}
+  if(cls>0||uk==='p'){const yc=(y0+y1)/2,hw=uk==='p'?.5:Math.max(dx*1.1+.12,.3);add(ap,GEO.box,M.f,hw*2,.1,.12,0,yc,-(uh(yc)+.05))}
+ }
+ // ---- shoulder bearing collar where the upper arm leaves the pauldron
+ if(!no('R')){const y=pb-.06,h=uh(y);
+  if(uk==='b')add(ap,GEO.box,M.chrome,h*2+.08,.09,h*2+.08,0,y,0);else add(ap,GEO.ring,M.chrome,h*1.04,1.4,h*1.04,0,y,0)}
+ // ---- elbow hinge knuckles
+ if(!no('H')){
+  if(jk==='o')add(el,GEO.cylX,M.chrome,j*2+.14,j*.2,j*.2);
+  else if(jk==='b'){for(const sx of[-1,1]){add(el,GEO.cylX,M.f,.1,j*.55,j*.55,sx*(j+.05),0,0);add(el,GEO.cylX,M.chrome,.06,j*.22,j*.22,sx*(j+.12),0,0)}}
+  else for(const sx of[-1,1])add(el,GEO.cylX,M.chrome,.08,j*.62,j*.62,sx*(A.shape==='piston'?.57:.52),0,0);
+ }
+ // ---- wrist actuators under the forearm, running into the wrist cuff
+ if(!no('W')){const z0=1.35,z1=2.0;
+  if(cls===2){const r=.055,x=Math.min(.3,fW(z1)*.4);for(const sx of[-1,1])ram(el,[sx*x,-(fH(z0)+r*1.4),z0],[sx*x,-(fH(z1)+r*1.4),z1],r)}
+  else{const r=cls?.045:.032;ram(el,[0,-(fH(z0)+r*1.4),z0],[0,-(fH(z1)+r*1.4),z1],r)}
+ }
+ // ---- forearm top: slim fins (light), heat sink (mid), bolted plate (heavy)
+ if(!no('T')){const z0=.15,z1=.85,zm=(z0+z1)/2,ty=fH(zm);
+  if(cls===0){for(const sx of[-1,0,1])add(el,GEO.box,M.f,.03,.1,z1-z0,sx*fW(zm)*.32,ty+.03,zm,Math.atan2(fH(z0)-fH(z1),z1-z0),0,0)}
+  else if(cls===1){add(el,GEO.box,M.dark,fW(zm)*.9,.06,z1-z0,0,ty,zm);for(let i=0;i<5;i++){const z=z0+.06+i*(z1-z0-.12)/4;add(el,GEO.box,M.f,fW(zm)*.82,.13,.03,0,fH(z)+.06,z)}}
+  else{add(el,GEO.box,M.f,fW(zm)*1.1,.08,z1-z0+.2,0,ty+.03,zm);K.bolts(el,[[-fW(zm)*.42,ty+.08,z0],[fW(zm)*.42,ty+.08,z0],[-fW(zm)*.42,ty+.08,z1],[fW(zm)*.42,ty+.08,z1]],.08)}
+ }
+ // ---- forearm inner-side vent
+ if(cls>0&&!no('V')){const z=.95,w=fW(z);K.intake(el,-s*(w-.1),-.05,z,.7,Math.min(.36,fH(z)*.8),-s*P/2,2)}
+
+ // ---- part-specific pieces
+ switch(A.shape){
+ case'reed':K.pipe(el,[-s*.2,.3,-.15],[-s*.16,.27,1.6],.03,M.pipe);break;
+ case'forge':K.bolts(ap,[[s*.2,-.25,.62],[s*.2,-.25,-.62]],.09);K.pipe(ap,[-s*.1,-.5,.42],[-s*.08,-1.9,.32],.05,M.dark,false);break;
+ case'talon':{const ty=1.05;K.bolts(el,[[-.7,ty,.1],[.7,ty,.1],[-.7,ty,1.9],[.7,ty,1.9]],.1);
+  K.intake(ap,s*1.6,.1,0,1.1,.5,s*P/2,3);
+  ram(ap,[s*.3,-.6,.56],[s*.3,-1.9,.56],.06);break}
+ case'javelin':K.pipe(el,[s*.29,fH(.0)+.02,0],[s*.25,fH(1.9)+.02,1.9],.04,M.pipe);add(el,GEO.box,M.f,.2,.06,.12,s*.27,fH(1)+.02,1);break;
+ case'piston':{// exposed twin rods: a spreader plate and a pumping ram under the forearm
+  add(ap,GEO.box,M.f,.82,.12,.3,0,-.6,0);add(ap,GEO.box,M.f,.82,.12,.3,0,-1.0,0);
+  pump(el,0,-.68,.2,.7,.06,.07,2.2,0);add(el,GEO.box,M.f,.2,.1,.2,0,-.62,1.5);break}
+ case'warden':{// shield standoffs and slab bolts
+  for(const[y,z]of[[.35,.2],[-.35,1.7]])add(el,GEO.box,M.f,.2,.22,.36,s*.67,y,z);
+  K.bolts(el,[[s*1.08,1.0,-.4],[s*1.08,1.0,2.5],[s*1.08,-1.4,-.4],[s*1.08,-1.4,2.5]],.13);break}
+ case'ghost':K.pipe(ap,[s*.05,-.25,.26],[s*.1,-1.95,.18],.03,M.chrome,false);K.pipe(el,[-s*.22,fH(.1)+.02,.1],[-s*.18,fH(1.6)+.02,1.6],.025,M.pipe,false);break;
+ case'sentinel':{// gauntlet top plate bolts, pauldron hinge knuckle
+  K.bolts(el,[[-.6,1.0,.85],[.6,1.0,.85],[-.6,1.0,1.95],[.6,1.0,1.95]],.09);
+  add(ap,GEO.cylZ,M.f,.22,.22,1.3,s*.55,-.12,0);add(ap,GEO.cylZ,M.chrome,.12,.12,1.4,s*.55,-.12,0);break}
+ case'mantis':K.pipe(el,[s*.2,fH(-.1)+.02,-.1],[s*.17,fH(1.5)+.02,1.5],.03,M.pipe);break;
+ case'turbo':{// wrist rams set wide to clear the down thruster, fan duct grille
+  for(const sx of[-1,1])ram(el,[sx*.42,-.66,1.3],[sx*.42,-.66,2.0],.045);
+  for(const y of[-.15,.15])add(el,GEO.box,M.f,.06,.06,.8,s*.76,y,.9);break}
+ case'ogre':{// fist drive: two pumping rams on the forearm top, bolted collar under the pauldron
+  for(const x of[-.5,.5])pump(el,x,1.0,.0,1.0,.09,.08,1.6,x>0?1.6:0);
+  add(el,GEO.box,M.f,1.5,.08,.4,0,.93,1.85);
+  K.bolts(ap,[[s*.35,-.5,.61],[-s*.35,-.5,.61],[s*.35,-.5,-.61],[-s*.35,-.5,-.61]],.1);break}
+ case'cobalt':K.bolts(el,[[s*.5,.64,-.05],[-s*.5,.64,-.05]],.08);K.intake(ap,s*.2,.35,1.0,.9,.4,0,2);break;
+ case'lynx':K.pipe(el,[-s*.26,fH(0)+.02,0],[-s*.22,fH(1.6)+.02,1.6],.03,M.pipe);break;
+ case'bracer':K.bolts(el,[[s*.92,.55,.2],[s*.92,.55,1.9],[s*.92,-.55,.2],[s*.92,-.55,1.9]],.09);break;
+ case'helix':{// wrist cooling fan on the inner side in a flat housing, ribbed hose on the back
+  add(el,GEO.box,M.f,.16,.7,.7,-s*.6,0,1.45);K.turbine(el,-s*.7,0,1.45,.28,'x',-s,1.2);
+  K.pipe(ap,[-s*.25,-.7,-.4],[-s*.2,-1.95,-.35],.06,M.pipe);break}
+ case'vigil':K.bolts(el,[[-.5,.77,.5],[.5,.77,.5],[-.5,.77,1.9],[.5,.77,1.9]],.08);K.pipe(el,[s*.3,.66,.42],[s*.33,fH(-.1)+.01,-.1],.04,M.pipe,false);break;
+ case'trooper':K.bolts(el,[[s*.73,.2,1.55],[s*.73,.2,2.0],[-s*.73,.2,1.55],[-s*.73,.2,2.0]],.08);K.intake(ap,s*1.3,.3,0,1.2,.5,s*P/2,3);break;
+ case'howitzer':{// breathing vent flap on the pauldron back, bolted top plate, recoil buffer shroud
+  add(ap,GEO.box,M.dark,1.3,.6,.06,s*.3,.55,-1.3);
+  const f=G(ap,s*.3,.88,-1.34);add(f,GEO.box,M.f,1.4,.66,.05,0,-.33,0);for(let i=0;i<3;i++)add(f,GEO.box,M.pipe,1.3,.04,.06,0,-.12-i*.2,-.03);f.rotation.x=.18;K.osc(f,'rotation','x',.14,1.4);
+  K.bolts(el,[[-.8,1.08,.4],[.8,1.08,.4],[-.8,1.08,2.0],[.8,1.08,2.0]],.1);
+  for(const x of[-.55,.55])add(el,GEO.hexZ,M.f,.17,.17,.12,x,-.9,2.1);break}
+ case'lineman':K.intake(el,-s*(fW(1.3)-.1),0,1.3,.32,.36,-s*P/2,2);K.bolts(ap,[[s*.3,-.35,.55],[s*.3,-.35,-.55]],.09);break;
+ case'recon':{// small sweeping sensor head on the back of the shoulder cap, data cable down the upper arm
+  const g=G(ap,s*1.0,.55,-.82);g.rotation.y=s*2.5;add(g,GEO.cylZ,M.f,.1,.1,.24,0,0,.02);const h=G(g,0,0,.2);add(h,GEO.box,M.f,.3,.18,.2);add(h,GEO.cylZ,M.glass,.07,.07,.04,0,0,.1);K.osc(h,'rotation','y',.6,.7);
+  K.pipe(ap,[s*.42,-.3,.3],[s*.42,-1.9,.3],.035,M.dark,false);break}
+ case'falcon':K.pipe(el,[-s*.25,fH(0)+.02,0],[-s*.2,fH(1.5)+.02,1.5],.028,M.pipe);break;
+ case'engineer':{// spinning cable reel spokes, inner vent placed clear of the tool box
+  const r=G(ap,s*1.44,.35,0);r.rotation.y=s*P/2;add(r,GEO.cylZ,M.f,.2,.2,.06);for(let i=0;i<3;i++)add(r,GEO.box,M.chrome,.07,.5,.04,0,0,.02,0,0,i*P/3);K.R.spin.push({g:r,spd:.5*s});
+  K.intake(el,-s*.5,.15,.55,.6,.3,-s*P/2,2);K.pipe(ap,[s*.47,-.3,-.3],[s*.47,-1.9,-.3],.05,M.dark,false);break}
+ case'dozer':K.bolts(el,[[s*1.08,.8,.0],[s*1.08,.8,2.4],[s*1.08,-1.1,.0],[s*1.08,-1.1,2.4]],.12);add(el,GEO.box,M.f,.5,.08,.5,s*.45,.76,-.1);break;
+ }
+}
+function detail2Legs(L,K){
+ const {M,add,G,R}=K;const PI=Math.PI,sh=L.shape,hips=R.hips;
+ // ---- small kit
+ // bearing cap on a joint axis (both sides): dark disc + chrome hub
+ const caps=(p,x,r,w,y=0,z=0)=>{for(const sx of[-1,1]){add(p,GEO.cylX,M.f,w,r,r,sx*x,y,z);add(p,GEO.cylX,M.chrome,w+.06,r*.38,r*.38,sx*x,y,z);add(p,GEO.cylX,M.dark,w+.02,r*.62,r*.62,sx*x,y,z)}};
+ // pair of hydraulic rams mirrored across x
+ const rams=(p,x,y0,z0,y1,z1,r)=>{for(const sx of[-1,1])K.piston(p,[sx*x,y0,z0],[sx*x,y1,z1],r)};
+ // hinge bar across a foot with chrome knuckles
+ const hinge=(p,y,z,w,r)=>{add(p,GEO.cylX,M.pipe,w,r,r,0,y,z);for(const x of[-w*.36,0,w*.36])add(p,GEO.cylX,M.chrome,w*.14,r*1.3,r*1.3,x,y,z)};
+ // vent facing outward on the s side of a vertical face
+ const sideVent=(p,s,x,y,z,w,h,n)=>K.intake(p,s*x,y,z,w,h,s*PI/2,n||2);
+ // armoured hose (dark, chrome collars)
+ const hose=(p,a,b,r)=>K.pipe(p,a,b,r,M.dark);
+ // tow hook: mounting block + loop
+ const hook=(p,x,y,z,r,back)=>{add(p,GEO.box,M.f,r*1.6,r*1.4,r*1.2,x,y,z+(back?r*.4:-r*.4));add(p,GEO.ringV,M.pipe,r,r,r,x,y,z+(back?-r*.5:r*.5),0,PI/2,0)};
+
+ // ---------------------------------------------------------------- tracked frames
+ if(sh==='tank'||sh==='tread2'||sh==='halftrack'||sh==='behemoth'){
+  const trs=hips.children.filter(c=>c.isGroup&&Math.abs(c.position.x)>2.5);
+  // [half-width x, half-height y, half-length z, flame z, belly bottom y, belly w, belly d]
+  const T={tank:[1,1,4.2,-4.3,-1.6,2.2,2.6],tread2:[.8,.95,4.1,-4.2,-1.4,3,3.6],halftrack:[.75,.9,3.8,-4,-1.45,2.8,3.2],behemoth:[.95,1.05,4.5,-4.65,-1.55,3.2,4]}[sh];
+  const[hx,hy,hz,fz,by,bw,bd]=T;
+  // skid plate under the belly with bolt heads
+  add(hips,GEO.box,M.f,bw,.12,bd,0,by-.05,0);for(const x of[-bw*.4,bw*.4])for(const z of[-bd*.4,bd*.4])add(hips,GEO.oct,M.chrome,.12,.12,.12,x,by-.12,z);
+  for(const tr of trs){const s=Math.sign(tr.position.x);
+   // rear mud flaps, kept wide of the exhaust
+   const fx=sh==='tank'?.82:sh==='tread2'?.68:sh==='halftrack'?.65:.72,fw=sh==='tank'?.34:.22;
+   add(tr,GEO.box,M.dark,fw,.75,.06,s*fx,-hy+.5,-hz-.06,.12);add(tr,GEO.box,M.f,fw+.04,.1,.12,s*fx,-hy+.86,-hz-.04);
+   // tow hooks at the rear top corner, outer side
+   hook(tr,s*(hx-.25),hy-.35,-hz-.05,.16,true);
+   if(sh==='tank'){
+    // exposed running gear on the outer face: road wheels (roll with ground speed), sprocket hubs, return rollers
+    for(const z of[-3.1,-1.55,0,1.55,3.1]){const w=G(tr,s*1.07,-.35,z);add(w,GEO.cylX,M.dark,.12,.55,.55);add(w,GEO.cylX,M.chrome,.14,.2,.2);add(w,GEO.box,M.pipe,.15,.1,.95);R.treads.push(w)}
+    for(const z of[-3.85,3.85]){const w=G(tr,s*1.04,.3,z);add(w,GEO.cylX,M.pipe,.1,.36,.36);for(let i=0;i<4;i++)add(w,GEO.box,M.f,.12,.1,.82,0,0,0,i*PI/4);R.treads.push(w)}
+    for(const z of[-2.3,0,2.3]){const w=G(tr,s*1.04,.55,z);add(w,GEO.cylX,M.pipe,.1,.15,.15);add(w,GEO.box,M.dark,.12,.06,.28);R.treads.push(w)}
+   }else{
+    // return rollers / idlers between road wheels, suspension struts down to the hubs
+    if(sh==='tread2'){for(const z of[-2.25,-.75,.75,2.25]){const w=G(tr,s*.86,.6,z);add(w,GEO.cylX,M.pipe,.12,.15,.15);add(w,GEO.box,M.dark,.14,.06,.28);R.treads.push(w)}
+     for(const z of[-3,-1.5,0,1.5,3])K.piston(tr,[s*1,.7,z-.55],[s*1,-.1,z-.12],.055)}
+    if(sh==='halftrack'){for(const z of[-2.7,-.9,.9,2.7])K.piston(tr,[s*.97,.15,z-.5],[s*.97,-.2,z-.1],.06);
+     K.bolts(tr,[-3,-1.8,-.6,.6,1.8,3].map(z=>[s*1.06,.95,z]),.1)}
+    if(sh==='behemoth'){for(const z of[-3.6,-2.16,-.72,.72,2.16,3.6])add(tr,GEO.box,M.f,.12,.32,.36,s*1.1,-.2,z);
+     K.bolts(tr,[-3.6,-2.16,-.72,.72,2.16,3.6].map(z=>[s*1.27,.85,z]),.11)}
+   }
+   // armoured feed hose along the inner side of the track housing
+   hose(tr,[-s*(hx+.05),.2,-2.4],[-s*(hx+.05),.2,2.2],.09);
+  }
+  if(sh==='behemoth')for(const s of[-1,1]){
+   // dozer blade rams from the hull to the back of the blade
+   K.piston(hips,[s*1.05,-1.4,2.75],[s*1.05,-1.95,4.5],.11);
+   add(hips,GEO.box,M.f,.5,.4,.3,s*1.05,-1.35,2.6)}
+  if(sh==='tank')for(const s of[-1,1])hose(hips,[s*1.6,-.6,2.2],[s*2.1,-1.1,1.2],.1);
+  return}
+
+ // ---------------------------------------------------------------- hover sled
+ if(sh==='hover'){
+  for(const p of R.pods||[]){const s=Math.sign(p.position.x);
+   // dorsal intake grille
+   const up=G(p,0,.37,.6);up.rotation.x=-PI/2;K.intake(up,0,0,0,.42,.62,0,3);
+   // chrome collar on the rear thruster housing
+   add(p,GEO.ringV,M.chrome,.45,.45,.6,0,0,-1.66);
+   // trim vane on the outer flank, breathing slowly
+   add(p,GEO.box,M.dark,.05,.38,.62,s*.47,-.04,-1.42);
+   const hv=G(p,s*.5,-.04,-1.08);hv.rotation.y=s*.14;add(hv,GEO.box,M.f,.05,.44,.7,s*.02,0,-.35);add(hv,GEO.cyl,M.chrome,.04,.5,.04,0,0,0);
+   K.osc(hv,'rotation','y',.1*s,1.4,s>0?0:1.3);
+   // feed line along the inner flank, nose bolts
+   K.pipe(p,[-s*.47,-.12,-1.3],[-s*.36,-.12,.9],.05);
+   K.bolts(p,[[s*.25,.3,1.05],[-s*.25,.3,1.05]],.08);
+  }
+  for(const s of[-1,1]){
+   // support rams under the outrigger struts, hoses into the skirt deck
+   K.piston(hips,[s*1.3,-1.68,.17],[s*2.35,-1.98,.17],.07);
+   hose(hips,[s*.42,-.55,.8],[s*.5,-1.2,.95],.08);
+  }
+  return}
+
+ // ---------------------------------------------------------------- multi-legged walkers
+ if(sh==='quad'||sh==='crab'||sh==='mule'){
+  // [hip cap x, hip cap r, thigh half x at root, thigh len, knee cap x, knee cap r, shin half x, shin half y, shin len, collar z]
+  const Q={quad:[.5,.42,.55,3.2,.45,.3,.45,.5,4.2,3.55],crab:[.45,.38,.5,2.8,.4,.27,.4,.45,3.8,3.15],mule:[.45,.38,.5,2.8,.4,.27,.425,.475,3.6,3]}[sh];
+  const[hcx,hcr,thx,tl,kcx,kcr,shx,shy,sl,cz]=Q;
+  const tf=z=>1-.364*z/tl,sf=z=>1-.364*z/sl;
+  for(const l of R.legs){
+   caps(l.th.parent,hcx,hcr,.2);
+   for(const sx of[-1,1])hose(l.th,[sx*(thx+.06),-.05,.5],[sx*(thx*tf(tl*.85)+.06),-.05,tl*.85],.06);
+   caps(l.kn,kcx,kcr,.14);
+   // ankle collar near the foot spike, bolted
+   add(l.kn,GEO.hexZ,M.f,shx*sf(cz)*1.18,shy*sf(cz)*1.18,.3,0,0,cz,0,0,PI/6);
+   add(l.kn,GEO.hexZ,M.chrome,shx*sf(cz)*1.22,shy*sf(cz)*1.22,.06,0,0,cz-.13,0,0,PI/6);
+   // shin actuator on the outward face, vent on the inward face
+   K.piston(l.kn,[0,shy*sf(.65)+.11,.65],[0,shy*sf(sl*.7)+.1,sl*.7],.07);
+   const v=G(l.kn,0,-shy*sf(1.6)-.02,1.6);v.rotation.x=PI/2;K.intake(v,0,0,0,shx*1.1,.7,0,3);
+  }
+  if(sh==='mule'){
+   K.turbine(hips,0,-.2,-2.12,.45,'z',-1,.8);
+   for(const s of[-1,1])hook(hips,s*1.25,-.75,-2.1,.18,true);
+   add(hips,GEO.box,M.f,1.3,.1,1.3,0,-.2,-2.12,0,0,0);
+  }
+  if(sh==='crab')for(const s of[-1,1])hose(hips,[s*.9,-.95,1.6],[s*1.3,-.5,1.95],.08);
+  if(sh==='quad')for(const s of[-1,1])hook(hips,s*.8,-.55,-2.75,.17,true);
+  return}
+
+ // ---------------------------------------------------------------- legged bipeds (normal and reverse joint)
+ // kc: knee caps [x,r,len] | an: ankle caps [x,r,y] | ap: ankle rams [x,y0,z0,y1,z1,r] | tv: thigh front vent [y,z,w,h]
+ // tr: thigh rear ram [x,y0,z0,y1,z1,r] (x on the outer side) | hg: toe hinge [y,z,w,r] | cv: ankle cuff side vent [x,y,w,h]
+ // sh: inner shin hose [x0,y0,z0,x1,y1,z1]
+ const P={
+  strider:{kc:[.48,.3,.16],an:[.8,.34,.05],ap:[.5,-1.85,-.84,-2.7,-.95,.07],tv:[-1,.68,.6,.5],tr:[.25,-.35,-.8,-2,-.6,.08],hg:[-.07,1,1.2,.08],sh:[.57,-.4,.35,.8,-2.4,.45]},
+  hare:{kc:[.46,.28,.14],an:[.5,.26,.05],ap:[.32,-2.2,.56,-3.2,.63,.07],tv:[-2.2,.68,.5,.4],tr:[.22,-.4,-.97,-2.2,-.71,.08],hg:[-.07,1,1,.07]},
+  bastion:{kc:[.9,.42,.3],an:[1.15,.38,.1],ap:[.75,-1.8,-1.1,-2.6,-1.25,.1],tv:[-1.1,1.02,.9,.6],tr:[.4,-.4,-1.1,-2,-1.1,.1],hg:[.03,1.55,2,.1]},
+  courser:{kc:[.45,.27,.14],cv:[.84,-2.35,.9,.35],tv:[-.9,.66,.5,.45],tr:[.2,-.4,-.75,-1.9,-.56,.07],hg:[.03,1.25,1.3,.08],sh:[.5,-.4,.3,.68,-1.9,.35]},
+  wheel:{kc:[.42,.25,.14],an:[.66,.3,.05],ap:[.45,-1.75,-.72,-2.45,-.8,.07],tv:[-.9,.65,.5,.4],tr:[.2,-.4,-.75,-1.8,-.56,.07]},
+  jugg:{kc:[.85,.45,.3],an:[1.22,.4,.12],ap:[.8,-1.85,-1.14,-2.6,-1.27,.1],tv:[-1.2,1.07,1,.6],tr:[.45,-.4,-1.15,-2,-1.15,.1],hg:[.03,1.6,2.2,.11]},
+  stilt:{kc:[.36,.2,.12],an:[.3,.2,0],ap:[.15,-2.9,-.42,-3.8,-.42,.05],tv:[-1,.58,.35,.5],hg:[-.08,0,.7,.14],sh:[.3,-.5,-.1,.3,-3.6,-.1]},
+  infantry:{kc:[.46,.3,.16],cv:[.92,-2.3,1,.35],tr:[.3,-.4,-.95,-2,-.95,.08],hg:[.03,1.2,1.4,.09],oh:[.85,-.5,-.45,.85,-1.85,-.45]},
+  garrison:{kc:[.7,.5,.2],an:[1.1,.4,.1],ap:[.7,-1.85,-1.16,-2.65,-1.16,.1],tv:[-1.2,1.02,.9,.6],tr:[.4,-.4,-1.1,-2,-1.1,.1],hg:[.03,1.45,2,.1]},
+  camel:{kc:[.46,.3,.16],an:[.6,.3,.05],ap:[.38,-2.1,-.72,-2.95,-.72,.07],tv:[-1.3,.82,.6,.5],tr:[.25,-.4,-.88,-2.1,-.88,.08],hg:[.03,1,1.2,.08]},
+  march:{kc:[.5,.3,.16],an:[.9,.33,.08],ap:[.55,-1.9,-.92,-2.65,-1.02,.08],tv:[-1.2,.92,.7,.55],tr:[.3,-.4,-.98,-2,-.98,.08],hg:[.03,1.35,1.6,.09]},
+  ranger:{kc:[.4,.24,.12],an:[.63,.26,.04],ap:[.38,-2.1,-.67,-2.95,-.76,.06],tv:[-.9,.62,.45,.4],hg:[-.06,.9,.9,.06],sh:[.45,-.4,.3,.62,-2.2,.35]},
+  dingo:{kc:[.44,.27,.14],an:[.48,.25,.04],ap:[.3,-2,.54,-2.85,.61,.07],tv:[-1.1,.68,.5,.45],tr:[.22,-.4,-.82,-2,-.58,.07],hg:[-.05,.7,.9,.06]},
+  porter:{kc:[.55,.32,.16],an:[.98,.36,.08],ap:[.6,-1.9,-.95,-2.55,-1.05,.09],tv:[-1.2,.78,.7,.5],tr:[.3,-.4,-.9,-2,-.66,.09],hg:[.03,1.5,1.8,.1]},
+  jackal:{kc:[.46,.28,.14],an:[.62,.28,.05],ap:[.38,-2,-.68,-2.95,-.76,.07],tv:[-1.3,.7,.55,.45],tr:[.25,-.4,-.82,-2.1,-.6,.08],hg:[.03,1.25,1.3,.08]},
+  hoplite:{kc:[.55,.32,.16],cv:[1.07,-2.4,1.1,.3],ap:[.6,-.6,-.76,-1.7,-.93,.08],tv:[-1.3,.77,.7,.5],tr:[.35,-.4,-.92,-2,-.68,.09],hg:[.03,1.5,1.8,.1]},
+ }[sh];
+ if(!P||!R.legs)return;
+ for(const l of R.legs){const s=l.s,{th,kn,ft}=l;
+  if(P.kc)caps(kn,P.kc[0],P.kc[1],P.kc[2]);
+  if(P.an&&ft)caps(ft,P.an[0],P.an[1],.22,P.an[2],0);
+  if(P.ap){const a=P.ap;rams(kn,a[0],a[1],a[2],a[3],a[4],a[5])}
+  if(P.tv)K.intake(th,0,P.tv[0],P.tv[1],P.tv[2],P.tv[3],0,3);
+  if(P.tr){const a=P.tr;K.piston(th,[s*a[0],a[1],a[2]],[s*a[0],a[3],a[4]],a[5])}
+  if(P.hg&&ft)hinge(ft,...P.hg);
+  if(P.cv)sideVent(kn,s,P.cv[0],P.cv[1],0,P.cv[2],P.cv[3],2);
+  if(P.sh){const a=P.sh;hose(kn,[-s*a[0],a[1],a[2]],[-s*a[3],a[4],a[5]],sh==='stilt'?.04:.07);
+   if(sh==='stilt')for(const y of[-1.2,-2.2,-3.1])add(kn,GEO.box,M.chrome,.08,.1,.12,-s*.27,y,-.1)}
+  if(P.oh){const a=P.oh;hose(kn,[s*a[0],a[1],a[2]],[s*a[3],a[4],a[5]],.08)}
+ }
+ // per-frame extras
+ if(sh==='jugg'){const g=G(hips,0,-.9,-1.4);g.rotation.x=.25;K.turbine(g,0,0,-.22,.4,'z',-1,.7)}
+ if(sh==='garrison')for(const l of R.legs)K.bolts(l.kn,[[l.s*1.335,-.75,.75],[l.s*1.335,-.75,-.75],[l.s*1.335,-2.05,.75],[l.s*1.335,-2.05,-.75]],.1);
+ if(sh==='porter')for(const l of R.legs)hook(l.ft,0,-.28,-1.75,.15,true);
+ if(sh==='bastion'||sh==='jugg')for(const l of R.legs)K.bolts(l.ft,[[-.9,.02,-.9],[.9,.02,-.9],[-.9,.02,.9],[.9,.02,.9]],.12);
+ if(sh==='wheel')for(const l of R.legs){
+  // wheel forks with hub caps; the caps sit on the spinning wheel groups
+  for(const w of R.wheels.filter(w=>w.parent===l.ft)){for(const sx of[-1,1]){add(l.ft,GEO.box,M.f,.06,.45,.7,sx*.31,-.58,w.position.z);add(w,GEO.cylX,M.chrome,.1,.14,.14,sx*.3,0,0);add(w,GEO.box,M.dark,.06,.08,.6,sx*.27,0,0)}}
+  K.bolts(l.ft,[[0,.02,-.8],[0,.02,.4],[0,.02,1.4]],.12)}
+}
+function detail2Booster(B,bg,K){
+ const {M,add,G}=K;const PI=Math.PI;
+ // ribbed collar bands just ahead of a nozzle exit (zf = flame z, exit ~zf-.05)
+ const collar=(p,x,y,zf,s,n=2)=>{for(let i=0;i<n;i++)add(p,GEO.ringV,i%2?M.f:M.chrome,.54*s,.54*s,.9,x,y,zf+.2+i*.2)};
+ // heat-shield petals: thin plates lapped around the nozzle near its exit
+ const petals=(p,x,y,zf,s,n=6)=>{const g=G(p,x,y,zf+.32);for(let i=0;i<n;i++){const a=G(g);a.rotation.z=i/n*TAU;add(a,GEO.box,M.pipe,.34*s,.05,.42,0,.47*s,0,.08,0,0)}};
+ // gimbal actuator; with mv the polished rod pumps along one axis
+ const act=(p,a,b,r,mv)=>{if(!mv){K.piston(p,a,b,r);return}
+  const m=[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],q=[(a[0]+m[0]*3)/4,(a[1]+m[1]*3)/4,(a[2]+m[2]*3)/4];
+  K.pipe(p,a,m,r*1.5,M.dark,false);add(p,GEO.oct,M.chrome,r*3,r*3,r*3,...a);
+  const g=G(p);K.pipe(g,q,b,r*.8,M.chrome,false);add(g,GEO.oct,M.chrome,r*3,r*3,r*3,...b);
+  const d=[b[0]-a[0],b[1]-a[1],b[2]-a[2]].map(Math.abs),ax=d[0]>d[1]&&d[0]>d[2]?'x':d[1]>d[2]?'y':'z';
+  K.osc(g,'position',ax,mv.amp||.035,mv.f||1.6,mv.ph||0)};
+ // access panel with grab handle, facing +z of its own frame (ry turns it)
+ const panel=(p,x,y,z,w,h,ry=0)=>{const g=G(p,x,y,z);g.rotation.y=ry;add(g,GEO.box,M.f,w,h,.06,0,0,0);
+  for(const sx of[-1,1])add(g,GEO.box,M.chrome,.05,.05,.1,sx*w*.28,-h*.12,.06);add(g,GEO.box,M.chrome,w*.66,.05,.05,0,-h*.12,.11);
+  K.bolts(g,[[-w/2+.07,h/2-.07,.04],[w/2-.07,h/2-.07,.04]],.06);return g};
+ // fuel tank filler cap: dark boss + chrome hex cap. dir: 'x+','x-','z-','y+'
+ const cap=(p,x,y,z,dir)=>{const sg=dir[1]==='-'?-1:1;
+  if(dir[0]==='x'){add(p,GEO.cylX,M.f,.08,.15,.15,x,y,z);add(p,GEO.hexZ,M.chrome,.1,.1,.07,x+sg*.06,y,z,0,PI/2,0)}
+  else if(dir[0]==='z'){add(p,GEO.cylZ,M.f,.15,.15,.08,x,y,z);add(p,GEO.hexZ,M.chrome,.1,.1,.07,x,y,z+sg*.06)}
+  else{add(p,GEO.cyl,M.f,.15,.08,.15,x,y,z);add(p,GEO.oct8,M.chrome,.1,.07,.1,x,y+.06,z)}};
+ // small intake fan on top of the pack, in a dark housing
+ const topFan=(p,x,y,z,r,spd=.9)=>{add(p,GEO.cyl,M.f,r*1.2,.3,r*1.2,x,y,z);K.turbine(p,x,y+.16,z,r,'y',1,spd)};
+ // slatted vent facing up (intake on a flat top face)
+ const topVent=(p,x,y,z,w,h,n=2)=>{const g=G(p,x,y,z);g.rotation.x=-PI/2;K.intake(g,0,0,0,w,h,0,n)};
+ // wing root hinge housing + control-surface actuator in a wing frame (s = side, len = span)
+ const wingKit=(w,s,len,mv)=>{add(w,GEO.cylZ,M.f,.2,.2,1.1,s*.25,.12,0);add(w,GEO.box,M.dark,len*.42,.2,.03,s*len*.55,0,-.36);
+  add(w,GEO.box,M.f,.18,.1,.5,s*len*.55,.12,-.15);act(w,[s*len*.55,.15,.12],[s*len*.55,.15,-.5],.035,mv)};
+ // prism keel back face z (prismZ sz at pz)
+ const kb=(pz,sz)=>pz-.2887*sz;
+ switch(B.shape){
+ case'twin':{const z=kb(-.1,1.2);
+  for(const s of[-1,1]){collar(bg,s*.7,-.25,-1.4,.9);act(bg,[s*1.0,.1,-.45],[s*1.15,-.25,-1.15],.04);
+   K.pipe(bg,[s*.3,.95,z-.03],[s*.7,.2,-1.0],.045);cap(bg,s*.62,1.25,-.2,s>0?'x+':'x-')}
+  panel(bg,0,1.75,z,.62,.36,PI);topFan(bg,0,2.05,-.18,.22,.9);break}
+ case'quad':{const z=kb(-.1,1.4);
+  for(const[x,y]of[[-1.05,.35],[1.05,.35],[-.55,-.6],[.55,-.6]])collar(bg,x,y,-1.4,1,1);
+  for(const s of[-1,1]){act(bg,[s*1.0,-.62,-.3],[s*1.06,-.62,-1.12],.045,{amp:.04,f:1.4,ph:s>0?0:1.6});K.pipe(bg,[s*.4,1.1,z-.03],[s*1.05,.87,-1.0],.05)}
+  panel(bg,0,2.2,z,.7,.45,PI);
+  for(const w of bg.children)if(!w.isMesh&&w.children.length>=4&&Math.abs(w.position.x)===1.3)wingKit(w,Math.sign(w.position.x),4.4);break}
+ case'delta':{
+  petals(bg,0,-.15,-1.6,1.8,8);collar(bg,0,-.15,-1.6,1.8,1);
+  for(const s of[-1,1]){act(bg,[s*1.0,-.15,-.45],[s*.85,-.15,-1.15],.05);K.pipe(bg,[s*.55,-.72,-.45],[s*.7,-.55,-1.1],.05);cap(bg,s*1.3,.89,-.3,'y+');
+   // elevon on the trailing edge (top surface), hinged at its front edge and trimming slowly
+   const e=G(bg,s*2.1,.92,-1.15);add(e,GEO.box,M.b,1.3,.06,.42,0,0,-.21);add(e,GEO.box,M.dark,1.3,.03,.03,0,-.01,0);K.osc(e,'rotation','x',.07,.7,s>0?0:PI);
+   add(bg,GEO.box,M.f,.16,.12,.55,s*2.1,.94,-.6);K.piston(bg,[s*2.1,1.0,-.45],[s*2.1,.98,-1.05],.03)}
+  break}
+ case'vtol':{const z=kb(-.1,1.2);
+  for(const s of[-1,1]){collar(bg,s*.6,-.3,-1.3,.8);K.pipe(bg,[s*.25,.95,z-.03],[s*.6,.12,-.95],.045);
+   add(bg,GEO.cylX,M.f,.35,.24,.24,s*.85,.7,.3);K.piston(bg,[s*.6,1.6,-.2],[s*1.55,.84,.15],.05);
+   for(const a of[0,PI/2,PI,PI*1.5])add(bg,GEO.box,M.f,.14,.3,.14,s*2.6+Math.sin(a)*1.27,.7,.3+Math.cos(a)*1.27,0,a,0)}
+  panel(bg,0,1.92,z,.66,.42,PI);break}
+ case'kite':{
+  for(const f of bg.children.filter(c=>!c.isMesh&&c.position.y===.3&&c.position.z===-.3)){
+   const i=Math.round(((f.rotation.z-PI/4)/(PI/2)));
+   collar(f,0,3.25,-.5,.75,1);add(f,GEO.box,M.f,.3,.35,1.08,0,.45,0);
+   act(f,[.14,1.4,-.2],[.15,2.82,-.2],.035,{amp:.035,f:1.5,ph:i*1.3});
+   K.pipe(f,[-.14,.7,.1],[-.14,2.9,.05],.04);K.bolts(f,[[.16,.45,.35],[.16,.45,-.35],[-.16,.45,.35],[-.16,.45,-.35]],.06)}
+  break}
+ case'pods':
+  for(const s of[-1,1]){for(const z of[-1.35,.9])add(bg,GEO.hexZ,M.f,1.03,1.03,.18,s*1.95,.3,z);
+   add(bg,GEO.box,M.f,1.2,.12,.32,s*1.3,1.05,.9,0,0,s*-.45);add(bg,GEO.box,M.f,1.2,.12,.32,s*1.3,1.05,-.2,0,0,s*-.45);
+   cap(bg,s*1.95,1.28,.3,'y+');topVent(bg,s*1.95,1.25,-.6,.4,.5,2);
+   K.pipe(bg,[s*.7,-.45,-.32],[s*1.25,-.45,-1.1],.07);K.bolts(bg,[[s*2.84,.75,-1.0],[s*2.84,-.15,-1.0],[s*2.84,.75,1.4],[s*2.84,-.15,1.4]],.07)}
+  panel(bg,0,.0,-.3,.9,.5,PI);break;
+ case'turbofan':{const z=kb(-.1,1.2);
+  for(const n of bg.children.filter(c=>!c.isMesh&&Math.abs(c.position.x)===2.3)){const s=Math.sign(n.position.x);
+   add(n,GEO.ringV,M.f,.87,.87,1.4,0,0,-.9);add(n,GEO.ringV,M.f,.87,.87,1.4,0,0,.6);
+   act(n,[0,.86,-1.05],[0,.6,-1.6],.04);act(n,[0,-.86,-1.05],[0,-.6,-1.6],.04);
+   add(n,GEO.box,M.f,.36,.06,.7,0,.85,.1);K.bolts(n,[[-.14,.88,.38],[.14,.88,.38],[-.14,.88,-.18],[.14,.88,-.18]],.05);
+   K.pipe(bg,[s*.62,.72,-.45],[s*1.85,.72,-.4],.05)}
+  panel(bg,0,1.85,z,.66,.4,PI);break}
+ case'rapier':{const z=kb(-.3,1.5);
+  for(const[y,sz]of[[2.1,.75],[.9,.9],[-.3,.75]])collar(bg,0,y,-1.5,sz,1);
+  for(const s of[-1,1]){K.pipe(bg,[s*.3,2.9,z-.04],[s*.3,-.7,z-.04],.05);
+   for(const[y,sz]of[[2.1,.75],[.9,.9],[-.3,.75]])K.pipe(bg,[s*.3,y+.1,z-.04],[s*(.45*sz+.05),y,-1.1],.035,M.pipe,false);
+   add(bg,GEO.cylZ,M.f,.12,.12,.9,s*.36,.3,-.4);K.piston(bg,[s*.7,.43,-.2],[s*1.3,.38,-.55],.03)}
+  break}
+ case'ring':{
+  add(bg,GEO.cylZ,M.f,.36,.36,.3,0,.6,-.78);add(bg,GEO.hexZ,M.chrome,.16,.16,.1,0,.6,-.95);
+  for(let i=0;i<6;i++){const a=i/6*TAU,sx=Math.sin(a),cy=Math.cos(a);collar(bg,sx*2.1,.6+cy*2.1,-1.9,.55,1);
+   K.pipe(bg,[sx*.36,.6+cy*.36,-.82],[sx*1.82,.6+cy*1.82,-.95],.045,M.pipe,false);
+   const b=a+PI/6;add(bg,GEO.box,M.f,.28,.18,.4,Math.sin(b)*2.1,.6+Math.cos(b)*2.1,-1.0,0,0,-b)}
+  break}
+ case'feather':{const z=kb(-.1,1.3);
+  for(const s of[-1,1]){collar(bg,s*.7,-.3,-1.4,1);act(bg,[s*1.05,.05,-.45],[s*1.22,-.3,-1.15],.045);K.pipe(bg,[s*.25,.95,z-.03],[s*.7,.22,-1.0],.05);
+   const w=bg.children.find(c=>!c.isMesh&&c.position.x===s*1.2&&c.position.y===1.4);
+   if(w){add(w,GEO.cyl,M.chrome,.11,.75,.11);add(w,GEO.cyl,M.f,.16,.08,.16,0,.37,0)}
+   K.piston(bg,[s*.4,2.25,z-.05],[s*1.0,1.62,-.62],.05)}
+  panel(bg,0,1.97,z,.6,.42,PI);break}
+ case'finch':{const z=kb(-.1,1.1);
+  for(const s of[-1,1]){collar(bg,s*.6,-.25,-1.4,.8,1);K.pipe(bg,[s*.22,.85,z-.03],[s*.6,.12,-1.0],.035);
+   add(bg,GEO.box,M.f,.5,.05,.08,s*1.25,.71,-.6,0,0,s*-.2);K.piston(bg,[s*.95,.72,-.3],[s*1.45,.6,-.7],.025);cap(bg,s*.52,1.1,-.15,s>0?'x+':'x-')}
+  K.intake(bg,0,1.78,z-.02,.5,.28,PI,2);break}
+ case'lark':{const z=kb(-.1,1.2);
+  collar(bg,0,-.1,-1.5,1.2,3);
+  for(const s of[-1,1]){act(bg,[s*.95,-.1,-.45],[s*.6,-.1,-1.15],.05,{amp:.035,f:1.3,ph:s>0?0:PI});
+   collar(bg,s*1.25,.5,-1.2,.55,1);K.pipe(bg,[s*.4,1.0,z-.03],[s*1.25,.8,-.65],.04);add(bg,GEO.cylX,M.f,.22,.17,.17,s*.42,.5,-.6)}
+  panel(bg,0,1.92,z,.66,.42,PI);break}
+ case'heronb':
+  for(const s of[-1,1]){collar(bg,0,1.9,-1.4,.8,1);collar(bg,0,.5,-1.4,.9,1);
+   panel(bg,s*.5,1.45,-.4,.6,.6,s*PI/2);cap(bg,s*.5,.25,-.4,s>0?'x+':'x-');
+   act(bg,[s*.53,1.9,-.85],[s*.38,1.9,-1.15],.035);act(bg,[s*.53,.5,-.85],[s*.43,.5,-1.15],.035);
+   add(bg,GEO.cylZ,M.f,.09,.09,1.2,s*.6,1.83,-.85);K.pipe(bg,[s*.42,2.65,-.6],[s*.42,.9,-.92],.04,M.pipe,false)}
+  break;
+ case'osprey':{const z=kb(-.1,1.2);
+  for(const s of[-1,1]){const n=bg.children.find(c=>!c.isMesh&&c.position.x===s*.9&&c.position.y===-.2);
+   if(n){collar(n,0,0,-.6,.9);K.piston(n,[s*.43,0,.2],[s*.43,0,-.25],.04)}
+   K.pipe(bg,[s*.4,.78,z-.03],[s*.88,.27,-.9],.045);
+   add(bg,GEO.cylX,M.f,.3,.22,.22,s*.85,.6,.2);add(bg,GEO.cylX,M.chrome,.12,.18,.18,s*1.28,.6,.2);
+   for(const a of[PI/2,PI,PI*1.5])add(bg,GEO.box,M.f,.12,.26,.12,s*2.1+Math.sin(a)*s*.82,.6,.2+Math.cos(a)*.82,0,a,0)}
+  panel(bg,0,1.82,z,.6,.4,PI);break}
+ case'petrel':
+  for(const x of[-1,0,1])collar(bg,x,.4,-1.4,.7,1);
+  for(const s of[-1,1]){panel(bg,s*1.5,.4,-.5,.6,.5,s*PI/2);topVent(bg,s*.95,.92,-.55,.5,.5,2);cap(bg,s*.55,.94,-.75,'y+')}
+  K.bolts(bg,[[-1.4,.82,-1.12],[1.4,.82,-1.12],[-1.4,0,-1.12],[1.4,0,-1.12]],.07);break;
+ case'sentry':{
+  for(const s of[-1,1]){collar(bg,s*.65,-.2,-1.4,.9);act(bg,[s*1.0,-.08,-.75],[s*1.09,-.2,-1.15],.045);cap(bg,s*.75,2.3,-.1,'y+')}
+  panel(bg,-.5,1.3,-.9,.75,.8,PI);
+  // louvered vent with a breathing flap
+  K.intake(bg,.5,1.15,-.92,.7,.5,PI,3);const fl=G(bg,.5,1.47,-1.0);fl.rotation.x=.32;add(fl,GEO.box,M.b,.82,.52,.05,0,-.26,-.04);
+  add(fl,GEO.cylX,M.chrome,.42,.045,.045);K.osc(fl,'rotation','x',.14,1.1);
+  K.bolts(bg,[[-1.0,2.0,-.92],[1.0,2.0,-.92],[-1.0,.3,-.92],[1.0,.3,-.92]],.08);break}
+ case'warhorse':
+  for(const[x,y]of[[-.7,1.3],[.7,1.3],[-.7,.1],[.7,.1]]){collar(bg,x,y,-1.6,.85);act(bg,[Math.sign(x)*1.22,y,-1.22],[Math.sign(x)*1.14,y,-1.52],.05)}
+  for(const s of[-1,1]){add(bg,GEO.box,M.f,.06,1.5,1.2,s*1.67,.9,-.4);K.bolts(bg,[[s*1.71,1.55,-.9],[s*1.71,1.55,.1],[s*1.71,.25,-.9],[s*1.71,.25,.1]],.09);
+   K.pipe(bg,[s*.14,2.12,-1.24],[s*.22,1.75,-1.5],.08,M.pipe);cap(bg,s*1.0,2.47,-.1,'y+');
+   add(bg,GEO.box,M.chrome,.06,.06,.6,s*1.7,1.2,-.4);topVent(bg,s*.45,2.47,-.5,.6,.6,3)}
+  break;
+ case'jumpjet':{
+  collar(bg,0,.2,-1.3,1);act(bg,[.85,.25,-.5],[.5,.2,-1.05],.05);act(bg,[-.85,.25,-.5],[-.5,.2,-1.05],.05);
+  panel(bg,0,1.65,-.75,.8,.55,PI);
+  for(const s of[-1,1]){cap(bg,s*2.2,.9,.1,s>0?'x+':'x-');K.intake(bg,s*1.7,.3,-.62,.6,.4,PI,2);topFan(bg,s*1.7,1.4,0,.3,1.1);
+   K.pipe(bg,[s*.8,1.6,-.4],[s*1.25,1.2,-.45],.05)}
+  break}
+ case'envoy':{const z=kb(-.1,1.3);
+  for(const zz of[-.7,-1.35])add(bg,GEO.ringV,M.f,.97,.97,1.2,0,-.1,zz);
+  for(let i=0;i<4;i++){const a=i*PI/2+PI/4;add(bg,GEO.box,M.f,.06,.2,.3,Math.sin(a)*.86,-.1+Math.cos(a)*.86,-1.5,0,0,-a)}
+  for(const s of[-1,1]){K.pipe(bg,[s*.45,.62,-.5],[s*.55,.72,-.95],.05);
+   add(bg,GEO.cylX,M.f,.2,.13,.13,s*.68,1.5,-.5);act(bg,[s*.66,1.15,-.35],[s*1.1,1.5,-.5],.03,{amp:.03,f:1.2,ph:s>0?0:PI})}
+  panel(bg,0,1.95,z,.66,.42,PI);break}
+ case'ramjet':
+  for(const t of bg.children.filter(c=>!c.isMesh&&Math.abs(c.position.x)===1.2)){const s=Math.sign(t.position.x);
+   for(const z of[-.6,.8])add(t,GEO.ringV,M.f,.47,.47,1.6,0,0,z);add(t,GEO.ringV,M.chrome,.47,.47,.9,0,0,-1.3);
+   topVent(t,0,.44,.2,.22,.5,2);K.pipe(t,[-s*.2,.4,-1.1],[-s*.2,.4,.6],.035,M.pipe,false);
+   K.pipe(bg,[s*.3,1.4,-.5],[s*1.1,.82,-.6],.05)}
+  panel(bg,0,2.0,-.8,.46,.5,PI);break;
+ case'cyclone':{
+  add(bg,GEO.box,M.f,.32,.3,.75,0,2.22,-.75);
+  for(const s of[-1,1]){add(bg,GEO.box,M.f,.6,.3,.5,s*1.38,.55,-.85);K.bolts(bg,[[s*1.45,.72,-.85]],.08);
+   K.piston(bg,[s*.62,1.6,-.42],[s*1.15,1.7,-1.0],.05)}
+  for(let i=0;i<4;i++){const a=i*PI/2+PI/4;add(bg,GEO.box,M.chrome,.22,.12,.5,Math.sin(a)*1.74,.55+Math.cos(a)*1.74,-1.15,0,0,-a)}
+  break}
+ case'ursa':
+  for(const s of[-1,1]){collar(bg,s*.7,.6,-1.7,1.05);act(bg,[s*.7,1.25,-1.12],[s*.7,1.14,-1.45],.05);
+   add(bg,GEO.box,M.f,.06,1.4,1.1,s*1.57,.9,-.4);K.bolts(bg,[[s*1.61,1.5,-.85],[s*1.61,1.5,.05],[s*1.61,.3,-.85],[s*1.61,.3,.05]],.08);
+   for(const z of[.1,-.9])add(bg,GEO.ring,M.chrome,.34,1,.34,s*1.05,-1.12,z)}
+  panel(bg,-.55,1.62,-1.1,.7,.55,PI);topFan(bg,.6,2.4,-.4,.3,.9);cap(bg,-.6,2.37,-.1,'y+');
+  K.pipe(bg,[.15,2.0,-1.12],[.3,1.15,-1.5],.07);K.pipe(bg,[-.15,2.0,-1.12],[-.3,1.15,-1.5],.07);break;
+ case'swept':{const z=kb(-.1,1.4);
+  for(const s of[-1,1]){collar(bg,s*.8,-.3,-1.4,1);act(bg,[s*1.05,.05,-.45],[s*1.27,-.3,-1.15],.045);K.pipe(bg,[s*.35,.95,z-.03],[s*.8,.22,-1.0],.05)}
+  panel(bg,0,2.2,z,.7,.45,PI);
+  for(const w of bg.children)if(!w.isMesh&&w.children.length>=4&&Math.abs(w.position.x)===1.3)wingKit(w,Math.sign(w.position.x),3.8);break}
+ }
+}
+function detail2Weapon(hand,d,K,o){
+ if(!d||!hand||!K)return;
+ const M=K.M,G=K.G,P=Math.PI,h=hand;
+ const a=(geo,mat,sx,sy,sz,x,y,z,rx,ry,rz)=>K.add(h,geo,mat,sx,sy,sz,x,y,z,rx||0,ry||0,rz||0);
+ // short accessory rail: base strip plus cross-slots
+ const rail=(x,y,z,len,w=.16)=>{a(GEO.box,M.f,w,.06,len,x,y,z);const n=Math.max(2,Math.round(len/.2));for(let i=0;i<n;i++)a(GEO.box,M.dark,w+.02,.04,.06,x,y+.03,z-len/2+len*(i+.5)/n)};
+ // capacitor / cell lying along z with chrome end caps and a band
+ const cell=(x,y,z,r,len,band)=>{a(GEO.cylZ,M.dark,r,r,len,x,y,z);for(const e of[-1,1])a(GEO.cylZ,M.chrome,r*1.12,r*1.12,.06,x,y,z+e*(len/2-.03));if(band)a(GEO.hexZ,band,r*1.08,r*1.08,.05,x,y,z)};
+ const blueB=M.coilB||(M.coilB=new THREE.MeshBasicMaterial({color:0x4ab8ff}));
+ switch(d.id){
+ case'rifle':
+  a(GEO.box,M.dark,.06,.18,.5,.27,.22,1.6);a(GEO.box,M.chrome,.03,.04,.5,.29,.33,1.6);           // ejection port + cover hinge
+  rail(0,.32,3.3,1.6);                                                                               // top rail on the barrel
+  a(GEO.box,M.f,.18,.5,.2,0,-.27,3.7);a(GEO.box,M.dark,.2,.06,.22,0,-.5,3.7);                          // foregrip
+  a(GEO.cylX,M.chrome,.06,.06,.2,-.42,.25,.15);a(GEO.sph,M.f,.07,.07,.07,-.53,.25,.15);               // charging handle
+  for(const s of[-1,1])a(GEO.box,M.dark,.04,.1,.08,s*.2,.12,4.95);                                     // brake ports
+  break;
+ case'gatling':{
+  const sp=o&&o.spin;if(sp){K.add(sp,GEO.hexZ,M.f,.5,.5,.1,0,0,1.2);K.add(sp,GEO.hexZ,M.chrome,.16,.16,3.0,0,0,1.55)}             // spinning clamp + spindle
+  K.bolts(h,[[.6,.35,.2],[.6,-.35,.2],[.55,.35,1.2],[.55,-.35,1.2]],.08);
+  K.pipe(h,[.4,-.55,.0],[.3,-.42,1.5],.07,M.dark);
+  break}
+ case'shotgun':
+  a(GEO.box,M.f,.6,.3,1,0,-.15,2.85);for(let i=0;i<4;i++)a(GEO.box,M.dark,.62,.05,.06,0,-.15,2.5+i*.23); // pump forend + grip grooves
+  a(GEO.box,M.f,.1,.06,1.85,0,.37,2.95);a(GEO.oct,M.chrome,.08,.08,.08,0,.42,3.82);                   // vent rib + bead
+  break;
+ case'bazooka':
+  for(const z of[.2,2.4]){a(GEO.box,M.f,.32,.18,.32,0,.98,z);K.bolts(h,[[.12,1.07,z],[-.12,1.07,z]],.06)} // tube clamps
+  a(GEO.box,M.f,.12,.2,.18,0,1.06,3.15);a(GEO.box,M.f,.32,.3,.45,0,1.3,3.15);a(GEO.box,M.glass,.24,.2,.04,0,1.3,3.38);a(GEO.box,M.dark,.24,.2,.04,0,1.3,2.92); // ranging sight
+  a(GEO.hexZ,M.f,.7,.7,.12,0,.35,-1.32);a(GEO.hexZ,M.dark,.5,.5,.04,0,.35,-1.39);                      // rear back-blast lip
+  K.pipe(h,[.22,-.45,.5],[.3,-.1,1.6],.05,M.dark);                                                   // firing cable
+  a(GEO.box,M.a,.06,.5,1.4,.6,.35,1.3);                                                              // heat shield on the tube flat
+  break;
+ case'dagger':
+  for(const s of[-1,1]){a(GEO.cylZ,M.dark,.08,.08,.45,s*.27,-.08,.2);a(GEO.hexZ,blueB,.085,.085,.05,s*.27,-.08,.28)} // capacitor cells
+  for(const x of[-.09,0,.09])a(GEO.box,M.pipe,.04,.1,.4,x,.27,.25);                                   // heat-sink fins
+  a(GEO.hexZ,M.chrome,.18,.18,.08,0,0,-.28);
+  K.pipe(h,[0,-.22,-.1],[0,-.42,-.6],.05,M.dark);                                                    // power lead to the forearm
+  break;
+ case'blade':
+  for(const s of[-1,1])cell(s*.36,-.05,.3,.11,.7);
+  for(const x of[-.12,0,.12])a(GEO.box,M.pipe,.05,.12,.6,x,.33,.25);                                  // fins on the hilt
+  K.pipe(h,[.25,-.28,.0],[.2,-.5,-.55],.06,M.dark);K.pipe(h,[-.25,-.28,.0],[-.2,-.5,-.55],.06,M.dark); // coolant/power leads
+  break;
+ case'cleaver':{
+  for(const s of[-1,1])for(const y of[-.2,.2])cell(s*.5,y,.35,.13,1.0);                               // capacitor bank
+  K.intake(h,0,.46,.3,.6,.5,0,3).rotation.x=-P/2;                                                    // top vent (dark well facing up)
+  const fl=G(h,0,.62,.62);K.add(fl,GEO.box,M.f,.66,.04,.24,0,0,-.12);K.osc(fl,'rotation','x',.12,1.1);   // breathing vent flap
+  K.pipe(h,[.3,-.46,-.1],[.3,-.6,-.6],.07,M.dark);K.pipe(h,[-.3,-.46,-.1],[-.3,-.6,-.6],.07,M.dark);
+  K.bolts(h,[[.46,.38,-.2],[-.46,.38,-.2],[.46,.38,.9],[-.46,.38,.9]],.07);
+  break}
+ case'tech':
+  for(const y of[.2,-.18]){cell(-.36,y,.8,.1,.8,blueB)}                                             // blue-banded cells
+  for(const z of[2.08,2.44,2.8])a(GEO.box,M.pipe,.3,.14,.05,0,.33,z);                                 // barrel fins between the rings
+  K.pipe(h,[-.2,-.4,1.5],[-.12,-.03,2.2],.05,M.pipe);
+  K.pipe(h,[-.15,-.4,-.2],[-.2,-.55,-.65],.05,M.dark);                                               // power lead
+  break;
+ case'pulse':
+  for(const y of[.15,-.15])cell(-.33,y,.9,.1,.9);
+  for(const z of[2.42,2.95,3.45])a(GEO.box,M.pipe,.3,.1,.06,0,.39,z);
+  K.pipe(h,[-.25,-.3,1.8],[-.15,0,2.6],.06,M.pipe);
+  K.bolts(h,[[.22,.3,.0],[-.22,.3,0]],.06);
+  break;
+ case'lancer':
+  for(const y of[.2,-.2])cell(.46,y,.6,.14,1.6);                                                     // capacitor bank
+  for(const z of[2.6,4.2]){a(GEO.box,M.f,.76,.08,.2,0,.29,z);a(GEO.box,M.f,.76,.08,.2,0,-.09,z)}       // rail spacers top/bottom
+  for(let i=0;i<6;i++)a(GEO.box,M.pipe,.1,.3,.06,.42,.1,2.4+i*.5);                                    // heat fins on the outer rail
+  K.pipe(h,[.4,-.35,1.5],[.37,-.02,3.1],.06,M.pipe);
+  break;
+ case'hornet':{
+  for(const z of[.35,1.35])a(GEO.box,M.f,1.19,1.14,.1,0,.1,z);                                        // tube straps
+  const sg=G(h,-.72,.38,1.1);K.add(sg,GEO.box,M.f,.28,.32,.55);K.add(sg,GEO.box,M.glass,.2,.2,.04,0,0,.29);K.add(sg,GEO.box,M.dark,.1,.18,.2,.14,0,-.1);
+  a(GEO.box,M.f,.18,.12,.3,-.62,.2,1.1);K.osc(sg,'rotation','y',.3,.7);                            // seeker box on a slow sweep
+  K.pipe(h,[.3,-.45,1.2],[.25,-.55,-.4],.06,M.dark);
+  K.bolts(h,[[.6,.5,.35],[.6,-.3,.35],[.6,.5,1.35],[.6,-.3,1.35]],.06);
+  break}
+ case'grenade':
+  for(const s of[-1,1]){a(GEO.cylX,M.chrome,.3,.3,.05,s*.62,-.1,.6);a(GEO.hexZ,M.dark,.1,.1,.08,s*.64,-.1,.6,0,P/2,0);
+   for(let i=0;i<6;i++){const t=i/6*TAU;a(GEO.cylX,M.dark,.1,.1,.04,s*.61,-.1+Math.sin(t)*.48,.6+Math.cos(t)*.48)}} // drum faces: chambers + hub
+  a(GEO.box,M.f,.24,.08,.3,0,.62,1.6);for(const x of[-.08,.08])a(GEO.box,M.f,.03,.28,.03,x,.78,1.62);a(GEO.box,M.f,.2,.03,.03,0,.9,1.62); // ladder sight
+  a(GEO.box,M.f,.2,.5,.25,0,-.45,2.3);a(GEO.box,M.dark,.22,.06,.27,0,-.68,2.3);                         // foregrip
+  break;
+ case'smg':
+  a(GEO.box,M.dark,.04,.2,.45,-.31,.15,1.0);                                                        // ejection port
+  a(GEO.cylX,M.chrome,.05,.05,.16,-.38,.25,.25);a(GEO.sph,M.f,.06,.06,.06,-.47,.25,.25);               // charging handle
+  a(GEO.box,M.f,.14,.4,.14,0,-.6,1.4);                                                              // stubby foregrip
+  rail(0,.44,1.45,.4,.14);
+  a(GEO.box,M.f,.06,.06,.3,0,.0,-.3);                                                               // sling loop stub
+  break;
+ case'longbow':
+  a(GEO.box,M.f,.2,.1,.2,0,-.07,4.8);for(const s of[-1,1])a(GEO.cylZ,M.chrome,.035,.035,1.2,s*.08,-.06,4.1); // folded bipod
+  a(GEO.cyl,M.f,.07,.12,.07,0,.8,1.8);a(GEO.cylX,M.f,.07,.07,.12,.2,.62,1.8);a(GEO.cylZ,M.glass,.13,.13,.02,0,.62,2.57); // scope turrets + lens
+  a(GEO.box,M.f,.1,.14,.15,0,.41,1.4);a(GEO.box,M.f,.1,.17,.15,0,.385,2.2);                             // scope mounts
+  a(GEO.cylX,M.chrome,.05,.05,.3,-.35,.2,.6);a(GEO.sph,M.chrome,.08,.08,.08,-.5,.2,.6);                // bolt handle
+  a(GEO.box,M.b,.2,.5,.4,0,-.58,1.4);
+  for(const s of[-1,1])for(const z of[6.68,6.92])a(GEO.box,M.dark,.03,.08,.12,s*.18,.1,z);              // brake slots
+  break;
+ case'twinfang':
+  for(const z of[1.0,2.6])for(const s of[-1,1])a(GEO.box,M.f,.3,.1,.2,s*.44,.74,z);                    // tube clamps
+  a(GEO.box,M.f,.5,.25,.3,0,.3,2.8);
+  a(GEO.box,M.f,.12,.14,.4,.86,.5,2.2);a(GEO.box,M.f,.22,.3,.6,.96,.55,2.2);a(GEO.box,M.glass,.16,.2,.04,.96,.55,2.52); // side sight
+  for(const s of[-1,1]){a(GEO.hexZ,M.f,.47,.47,.12,s*.44,.3,-.12);K.pipe(h,[s*.2,-.45,.9],[s*.44,-.06,1.4],.05,M.dark)} // rear lips + firing leads
+  break;
+ case'arc':
+  for(const s of[-1,1]){cell(s*.46,-.15,.7,.12,1.2);for(const z of[3.1,3.32])a(GEO.hexZ,M.t,.15,.15,.06,s*.32,.1,z)} // cells + insulator stacks
+  for(let i=0;i<4;i++)a(GEO.box,M.pipe,.6,.12,.05,0,-.5,.2+i*.3);                                      // belly fins
+  K.pipe(h,[.2,-.4,-.1],[.25,-.55,-.6],.06,M.dark);
+  break;
+ case'carbine':
+  rail(0,.27,2.9,1.2,.14);
+  a(GEO.box,M.f,.2,.18,.3,0,.39,2.5);a(GEO.box,M.glass,.14,.12,.03,0,.42,2.66);                         // red-dot housing
+  a(GEO.box,M.dark,.04,.2,.45,.25,.15,1.5);
+  a(GEO.cylX,M.chrome,.05,.05,.16,-.4,.25,.0);a(GEO.sph,M.f,.06,.06,.06,-.49,.25,.0);
+  a(GEO.box,M.f,.16,.45,.18,0,-.25,3.3);
+  break;
+ case'burst':
+  a(GEO.box,M.dark,.04,.25,.5,-.41,.2,1.6);a(GEO.box,M.chrome,.03,.04,.5,-.43,.34,1.6);
+  a(GEO.box,M.b,.32,.85,.45,0,-.82,2.05,-.15,0,0);
+  for(const z of[1.0,1.8])a(GEO.box,M.f,.1,.2,.15,0,.56,z);
+  a(GEO.cylX,M.chrome,.06,.06,.05,-.42,-.2,.8);a(GEO.box,M.f,.03,.05,.18,-.45,-.2,.88,.4,0,0);        // fire selector
+  for(let i=0;i<3;i++)for(const s of[-1,1])a(GEO.box,M.dark,.02,.1,.3,s*.16,.15,2.8+i*.4);          // handguard slots
+  break;
+ case'slug':
+  a(GEO.cylZ,M.f,.4,.4,.9,0,.15,2.9);for(const z of[2.6,2.9,3.2])a(GEO.cylZ,M.dark,.42,.42,.06,0,.15,z); // pump forend
+  a(GEO.box,M.f,.05,.14,.05,0,.56,3.75);a(GEO.ringV,M.chrome,.09,.09,.4,0,.66,3.75);                     // ghost-ring sight
+  break;
+ case'hmg':{
+  a(GEO.box,M.f,.82,.1,1.0,0,.6,.55);a(GEO.cylX,M.chrome,.06,.06,.84,0,.6,.03);                        // feed cover + hinge
+  const sk=G(h,.57,.36,.6);sk.rotation.y=P/2;K.add(sk,GEO.cylZ,M.f,.08,.08,.1,0,0,.03);
+  const wh=G(sk);K.add(wh,GEO.cylZ,M.chrome,.17,.17,.06,0,0,.08);for(let i=0;i<8;i++){const t=i/8*TAU;K.add(wh,GEO.box,M.f,.06,.06,.06,Math.cos(t)*.19,Math.sin(t)*.19,.08,0,0,t)}
+  K.R.spin.push({g:wh,spd:.12});                                                                    // slow belt sprocket
+  for(const z of[2.35,3.1])a(GEO.box,M.f,.08,.3,.08,0,.55,z);a(GEO.cylZ,M.chrome,.05,.05,.95,0,.72,2.72); // carry handle
+  a(GEO.box,M.f,.05,.2,.05,0,.38,4.3);
+  K.bolts(h,[[.56,.4,1.8],[.56,-.4,1.8],[-.56,.4,1.8],[-.56,-.4,1.8]],.08);
+  break}
+ case'hound':
+  for(const z of[.3,1.4])a(GEO.hexZ,M.f,.65,.65,.12,0,.15,z);
+  a(GEO.box,M.f,.28,.35,.6,-.66,.3,1.2);a(GEO.box,M.glass,.2,.2,.04,-.66,.3,1.52);
+  a(GEO.box,M.f,.26,.4,.7,.64,-.0,1.0);K.intake(h,.78,0,1.0,.5,.28,P/2,2);                              // datalink module
+  K.pipe(h,[.6,-.25,.6],[.35,-.55,-.3],.06,M.dark);
+  break;
+ case'nailer':{
+  a(GEO.cylZ,M.t,.2,.2,1.2,-.65,-.15,.8);for(const e of[-1,1])a(GEO.cylZ,M.chrome,.22,.22,.06,-.65,-.15,.8+e*.57); // air tank
+  a(GEO.cyl,M.chrome,.09,.06,.09,-.65,.08,.95);a(GEO.cyl,M.glass,.07,.02,.07,-.65,.12,.95);            // gauge
+  for(const z of[.45,1.15])a(GEO.box,M.f,.32,.06,.06,-.55,.06,z);
+  a(GEO.box,M.f,.75,.2,.15,0,.05,2.5);
+  // pneumatic driver: sleeve with a pumping rod on the right flank
+  a(GEO.cylZ,M.dark,.1,.1,.7,.55,-.2,.9);const pr=G(h,.55,-.2,1.25);K.add(pr,GEO.cylZ,M.chrome,.05,.05,.5,0,0,.1);K.add(pr,GEO.oct,M.chrome,.12,.12,.12,0,0,.35);
+  K.osc(pr,'position','z',.06,2.4);
+  K.pipe(h,[-.65,-.3,.2],[-.55,-.5,-.4],.06,M.dark);
+  break}
+ case'duckfoot':
+  for(const y of[.3,-.06])a(GEO.box,M.f,.9,.06,.3,0,y,2.2);K.bolts(h,[[-.38,.34,2.2],[.38,.34,2.2]],.06); // barrel plates
+  a(GEO.cylX,M.chrome,.1,.1,1.08,0,-.25,1.15);                                                      // hinge pin
+  a(GEO.box,M.chrome,.1,.06,.35,.2,.43,-.05);
+  for(const s of[-1,1])a(GEO.box,M.dark,.04,.3,.6,s*.51,0,.5);
+  break;
+ case'harpoon':{
+  for(const z of[.4,1.6])a(GEO.cylZ,M.f,.33,.33,.08,-.62,-.1,z);
+  a(GEO.cylZ,M.chrome,.14,.14,.06,-.62,-.1,1.93);a(GEO.cylZ,M.glass,.11,.11,.02,-.62,-.1,1.97);
+  K.pipe(h,[-.62,.05,1.85],[-.36,.05,2.6],.06,M.dark);
+  for(const z of[1.6,2.8])a(GEO.hexZ,M.f,.51,.51,.1,0,.12,z);
+  const rl=G(h,0,-.6,2.4);rl.rotation.y=P/2;K.add(rl,GEO.cylZ,M.t,.22,.22,.36);for(const e of[-1,1])K.add(rl,GEO.cylZ,M.chrome,.32,.32,.04,0,0,e*.2); // line reel
+  a(GEO.box,M.f,.5,.12,.3,0,-.32,2.4);
+  break}
+ case'prism':
+  K.turbine(h,-.37,0,.7,.24,'x',-1,.5);                                                             // cooling fan
+  cell(.34,-.15,.9,.1,.9);
+  for(const z of[1.9,2.3,2.5])a(GEO.box,M.pipe,.3,.1,.05,0,.31,z);
+  K.pipe(h,[.25,.2,1.6],[.15,.1,2.2],.05,M.pipe);
+  break;
+ case'napalm':
+  a(GEO.cylZ,M.t,.22,.22,1.1,-.66,0,.8);for(const e of[-1,1])a(GEO.cylZ,M.chrome,.24,.24,.06,-.66,0,.8+e*.52); // fuel canister
+  a(GEO.cyl,M.chrome,.06,.14,.06,-.66,.25,1.2);K.pipe(h,[-.66,0,1.38],[-.35,.05,2.0],.06,M.dark);
+  for(const x of[-.3,.3])a(GEO.cylX,M.f,.58,.58,.08,x,-.75,.8);                                       // tank straps
+  a(GEO.box,M.f,.2,.2,.4,0,-.33,3.3);a(GEO.box,M.hot,.06,.06,.06,0,-.4,3.51);                        // igniter + pilot
+  a(GEO.box,M.f,.5,.06,1.4,0,.6,2.6);for(let i=0;i<4;i++)a(GEO.box,M.dark,.36,.02,.12,0,.635,2.1+i*.32); // perforated heat shield
+  break;
+ case'torch':{
+  const tc=M.coilT||(M.coilT=new THREE.MeshBasicMaterial({color:0x5ab8ff}));
+  K.turbine(h,-.38,0,.6,.26,'x',-1,.5);
+  cell(.33,-.12,.8,.1,.8,tc);
+  for(const z of[2.31,2.73,3.15])a(GEO.box,M.pipe,.64,.3,.05,0,.12,z);
+  K.pipe(h,[0,-.62,.0],[0,-.7,-.5],.06,M.dark);
+  break}
+ }
+}
+function detail2Shoulder(d,g,K,o){
+ // g: the unit's own group (+z forward, -x outboard, +x inboard toward the head). Everything stays on the unit body,
+ // behind/beside the launch faces and barrels, so the swivel-aim moves it all together.
+ const {M,add,G}=K;const PI=Math.PI;
+ const bolts=(par,pts,s=.07)=>K.bolts(par,pts,s);
+ // flat bolted plate on a side face (x = face, nx = outward sign)
+ const sidePlate=(par,x,y,z,h,dz,nx,mat=M.a)=>{add(par,GEO.box,mat,.07,h,dz,x+nx*.035,y,z);
+  bolts(par,[[x+nx*.08,y+h/2-.09,z+dz/2-.09],[x+nx*.08,y+h/2-.09,z-dz/2+.09],[x+nx*.08,y-h/2+.09,z+dz/2-.09],[x+nx*.08,y-h/2+.09,z-dz/2+.09]],.06)};
+ // lifting eye on a top face
+ const lug=(par,x,y,z)=>{add(par,GEO.box,M.f,.1,.16,.22,x,y+.06,z);add(par,GEO.ringV,M.chrome,.09,.09,.6,x,y+.17,z,0,PI/2,0)};
+ // grab handle along z on a side face
+ const handle=(par,x,y,z,len,nx)=>{for(const e of[-1,1])add(par,GEO.box,M.f,.12,.06,.06,x+nx*.06,y,z+e*len/2);add(par,GEO.cylZ,M.chrome,.03,.03,len+.06,x+nx*.12,y,z)};
+ // hinged hatch on a top face
+ const hatch=(par,x,y,z,w,dz,mat=M.f)=>{add(par,GEO.box,mat,w,.05,dz,x,y+.025,z);add(par,GEO.box,M.dark,w*.86,.02,.03,x,y+.05,z);
+  for(const e of[-1,1])add(par,GEO.cylX,M.chrome,.04,.04,.14,x+e*w*.32,y+.05,z-dz/2)};
+ // sweeping rangefinder/sensor head on a post
+ const ranger=(par,x,y,z,h,sc=1,amp=.5,fr=.6,ph=0)=>{add(par,GEO.cyl,M.f,.07*sc,h,.07*sc,x,y+h/2,z);add(par,GEO.cyl,M.chrome,.11*sc,.05,.11*sc,x,y+.025,z);
+  const r=G(par,x,y+h,z);add(r,GEO.box,M.f,.42*sc,.2*sc,.3*sc,0,.1*sc,0);add(r,GEO.box,M.dark,.5*sc,.06*sc,.06*sc,0,.1*sc,.03*sc);
+  for(const e of[-1,1]){add(r,GEO.cylZ,M.pipe,.06*sc,.06*sc,.12*sc,e*.17*sc,.1*sc,.17*sc);add(r,GEO.cylZ,M.glass,.045*sc,.045*sc,.03*sc,e*.17*sc,.1*sc,.235*sc)}
+  add(r,GEO.box,M.f,.04*sc,.14*sc,.04*sc,-.14*sc,.27*sc,-.08*sc);K.osc(r,'rotation','y',amp,fr,ph);return r};
+ // ram along z: dark sleeve fixed, chrome rod that slides gently in and out
+ const ram=(par,x,y,z0,z1,r,amp,fr)=>{const m=(z0+z1)/2;add(par,GEO.cylZ,M.dark,r*1.4,r*1.4,m-z0,x,y,(z0+m)/2);add(par,GEO.cylZ,M.chrome,r*1.7,r*1.7,.06,x,y,m-.03);
+  const rg=G(par,x,y,m);add(rg,GEO.cylZ,M.chrome,r*.75,r*.75,(z1-m)*.95,0,0,(z1-m)*.45);if(amp)K.osc(rg,'position','z',amp,fr);
+  add(par,GEO.oct,M.chrome,r*3,r*3,r*3,x,y,z0);add(par,GEO.box,M.f,r*2.6,r*2.6,r*2.2,x,y,z1);return rg};
+ // vertical fin stack on a side face
+ const fins=(par,x,y,z,n,step,h,nx,dep=.22)=>{for(let i=0;i<n;i++)add(par,GEO.box,M.f,dep,h,.05,x+nx*dep/2-nx*.04,y,z+i*step);add(par,GEO.box,M.pipe,.06,h*.3,step*(n-1)+.1,x-nx*.01,y-h/2+.05,z+step*(n-1)/2)};
+ switch(d.id){
+ case'missiles':{ // tapered box launcher, glowing cells on the front face
+  const sd=G(g,-.9,0,0);sd.rotation.y=.142;sidePlate(sd,-.01,-.05,-.15,.85,1.7,-1);
+  add(sd,GEO.box,M.dark,.05,.06,1.4,-.1,.42,-.15);
+  add(g,GEO.box,M.f,1.2,.5,.2,0,.3,-1.47);bolts(g,[[-.5,.48,-1.58],[.5,.48,-1.58],[-.5,.12,-1.58],[.5,.12,-1.58]],.07);
+  add(g,GEO.box,M.f,.95,.32,.8,0,-.66,.5);add(g,GEO.cylX,M.chrome,.12,.12,1.05,0,-.7,.5);
+  hatch(g,-.72,.73,-.9,.5,.6);
+  ranger(g,.7,.7,-.95,.18,.9,.45,.55);
+  K.pipe(g,[.92,-.35,-1.0],[.62,-.62,.1],.06,M.dark);
+  lug(g,-.62,.7,-.3);
+  break}
+ case'plasma':{ // long cannon: rear tapered breech + barrel with three coils
+  const sd=G(g,-.72,0,-1.1);sd.rotation.y=.103;fins(sd,0,0,-.55,5,.26,1.0,-1,.24);
+  const si=G(g,.72,0,-1.1);si.rotation.y=-.103;fins(si,0,-.05,-.4,4,.26,.8,1,.18);
+  K.pipe(g,[-.55,-.3,-.25],[-.27,-.18,.95],.06);K.pipe(g,[.55,-.3,-.25],[.27,-.18,.95],.06);
+  for(const e of[-1,1]){add(g,GEO.cylZ,M.pipe,.11,.11,.7,e*.14,-.47,.85);add(g,GEO.cylZ,M.chrome,.13,.13,.06,e*.14,-.47,1.18)}
+  add(g,GEO.box,M.f,.5,.08,.72,0,-.38,.85);
+  add(g,GEO.box,M.f,.9,.1,.8,0,.77,-1.45);for(let i=0;i<4;i++)add(g,GEO.box,M.pipe,.8,.1,.04,0,.86,-1.75+i*.2);
+  {const fl=G(g,0,.82,-.85);fl.rotation.x=.22;add(fl,GEO.box,M.a,.62,.05,.42,0,.02,-.21);add(fl,GEO.cylX,M.chrome,.05,.05,.66,0,0,0);K.osc(fl,'rotation','x',.14,1.1)}
+  break}
+ case'swarm':{ // big box, 4x3 cells on the front face
+  sidePlate(g,-1.3,-.1,-.05,1.3,1.6,-1);handle(g,-1.38,.6,-.1,1.1,-1);
+  for(const z of[-.6,.6]){add(g,GEO.box,M.f,.22,.32,.42,-1.38,-.72,z);add(g,GEO.cylX,M.chrome,.08,.08,.3,-1.45,-.72,z)}
+  for(const e of[-1,1])add(g,GEO.box,M.f,.12,1.7,.3,e*1.34,0,1.2);
+  hatch(g,-.35,.95,-.88,1.3,.36);
+  K.pipe(g,[1.3,-.4,-.9],[1.36,.55,-.3],.07,M.dark);add(g,GEO.box,M.f,.12,.28,.28,1.34,.55,-.3);
+  lug(g,-.9,.95,.6);lug(g,.9,.95,.6);
+  break}
+ case'salvo':{ // long box on a dark skirt, 4x2 tubes
+  sidePlate(g,-.95,.15,-.3,.8,2.0,-1);
+  add(g,GEO.box,M.f,.18,.22,2.6,-1.03,-.42,0);for(const z of[-1.1,0,1.1])add(g,GEO.box,M.chrome,.08,.26,.08,-1.1,-.42,z);
+  hatch(g,-.3,.75,-.8,.7,1.0);hatch(g,.35,.75,-.8,.45,1.0,M.a);
+  add(g,GEO.box,M.f,1.4,.6,.22,0,.15,-1.58);for(let i=0;i<3;i++)add(g,GEO.box,M.dark,1.2,.05,.03,0,0+i*.15,-1.7);
+  K.pipe(g,[.9,.2,-1.55],[.96,-.45,-1.1],.06,M.dark,true);
+  for(const e of[-1,1])add(g,GEO.box,M.f,.1,1.3,.22,e*.93,-.05,1.45);
+  lug(g,-.55,.75,.9);
+  break}
+ case'barrier':{ // octahedral projector with a mast; a ring orbits its equator
+  add(g,GEO.cyl,M.chrome,.17,.12,.17,0,.62,0);add(g,GEO.cyl,M.f,.24,.08,.24,0,.56,0);
+  for(const y of[1.2,1.55])add(g,GEO.box,M.f,.28,.06,.28,0,y,0);
+  K.pipe(g,[-.16,.62,.06],[-.13,1.75,.06],.035,M.dark,false);
+  for(const e of[-1,1])K.pipe(g,[e*.46,.47,-.1],[e*.1,1.3,-.05],.03,M.chrome,false);
+  add(g,GEO.box,M.f,.36,.22,.36,0,1.82,0);
+  add(g,GEO.box,M.f,.5,.3,.3,0,-.5,-.55,.78,0,0);K.pipe(g,[.0,-.55,-.62],[.48,-.66,-.98],.06,M.dark);
+  add(g,GEO.cylZ,M.f,.36,.36,.08,0,0,.84);
+  break}
+ case'mortar':{ // box breech + angled tube; elevation ram pumps gently
+  for(const e of[-1,1]){add(g,GEO.box,M.f,.1,.6,.85,e*.66,.92,.45);add(g,GEO.cylX,M.chrome,.15,.15,.08,e*.73,.95,.5);bolts(g,[[e*.72,1.12,.2],[e*.72,1.12,.75]],.05)}
+  ram(g,-.78,.84,-1.0,.65,.09,.05,2.2);
+  add(g,GEO.box,M.f,.1,.55,1.4,-.94,-.1,-.6);
+  for(const z of[-1.1,-.65,-.2]){add(g,GEO.cyl,M.f,.13,.5,.13,-1.11,-.1,z);add(g,GEO.cyl,M.t,.135,.05,.135,-1.11,0,z);add(g,GEO.spike,M.f,.18,.12,.18,-1.11,.21,z)}
+  add(g,GEO.box,M.dark,.04,.07,1.42,-1.24,0,-.6);
+  add(g,GEO.box,M.a,1.2,.8,.06,0,0,-1.53);bolts(g,[[-.5,.32,-1.57],[.5,.32,-1.57],[-.5,-.32,-1.57],[.5,-.32,-1.57]],.07);
+  handle(g,-.92,.45,-.6,.9,-1);
+  break}
+ case'halberd':{ // railgun: block + twin rails
+  for(const z of[1.5,3.2,4.9]){add(g,GEO.box,M.f,.82,.1,.22,0,-.08,z);for(const e of[-1,1]){add(g,GEO.box,M.f,.1,.34,.26,e*.47,.15,z);add(g,GEO.oct,M.chrome,.07,.07,.07,e*.53,.15,z)}}
+  add(g,GEO.cylZ,M.pipe,.2,.2,1.6,-.82,-.18,-.5);for(const z of[-1.3,.3])add(g,GEO.cylZ,M.chrome,.23,.23,.07,-.82,-.18,z);
+  for(const z of[-1,0])add(g,GEO.box,M.f,.24,.14,.16,-.72,-.18,z);
+  K.pipe(g,[-.6,.3,.85],[-.42,.1,1.7],.06,M.dark);K.pipe(g,[.6,.3,.85],[.42,.1,1.7],.06,M.dark);
+  for(let i=0;i<3;i++)add(g,GEO.box,M.f,.95,.06,.28,0,-.3+i*.3,-1.78);
+  sidePlate(g,-.65,.15,-.6,.6,1.3,-1,M.b);
+  break}
+ case'flak':{ // twin autocannon box turret
+  add(g,GEO.cylX,M.f,.48,.48,.3,-1.0,-.05,-.25);add(g,GEO.cylX,M.chrome,.2,.2,.34,-1.0,-.05,-.25);
+  bolts(g,[[-1.16,.3,-.25],[-1.16,-.4,-.25],[-1.16,-.05,.1],[-1.16,-.05,-.6]],.06);
+  K.pipe(g,[-.95,.32,.0],[-.56,.42,.95],.11,M.dark);
+  for(const e of[-1,1]){add(g,GEO.hexZ,M.dark,.22,.22,.55,e*.38,0,1.35);add(g,GEO.box,M.pipe,.04,.06,.4,e*.61,0,1.35)}
+  add(g,GEO.box,M.f,1.0,.12,.14,0,-.22,2.1);add(g,GEO.box,M.f,.14,.12,.14,0,-.13,2.1);
+  ranger(g,-.5,.6,-.78,.22,.85,.55,.7);
+  sidePlate(g,-.85,-.05,.55,.7,.5,-1,M.a);
+  break}
+ case'javelin':{ // two big tubes + spine
+  for(const e of[-1,1]){for(const z of[-.4,1.0])add(g,GEO.hexZ,M.f,.67,.67,.14,e*.66,0,z);
+   add(g,GEO.box,M.f,.12,.14,.24,e*.66,.65,.35);add(g,GEO.ringV,M.chrome,.08,.08,.6,e*.66,.74,.35,0,PI/2,0)}
+  for(const z of[-.4,1.0])add(g,GEO.box,M.f,1.7,.16,.5,0,-.58,z);
+  {const sk=G(g,0,.45,-.55);add(sk,GEO.box,M.f,.4,.26,.6,0,.12,0);add(sk,GEO.box,M.glass,.24,.1,.03,0,.14,.31);add(sk,GEO.box,M.dark,.3,.04,.5,0,.27,-.04);K.osc(sk,'rotation','y',.3,.5)}
+  add(g,GEO.cyl,M.f,.08,.12,.08,0,.47,-.55);
+  K.pipe(g,[.2,.1,-1.25],[.6,-.15,-1.45],.05,M.dark);K.pipe(g,[-.2,.1,-1.25],[-.6,-.15,-1.45],.05,M.dark);
+  add(g,GEO.box,M.f,.5,.4,.18,0,-.1,-1.27);
+  break}
+ case'scatter':{ // shotgun pack
+  add(g,GEO.box,M.f,1.66,.1,.16,0,.57,1.2);add(g,GEO.box,M.f,1.66,.1,.16,0,-.57,1.2);for(const e of[-1,1])add(g,GEO.box,M.f,.1,1.24,.16,e*.83,0,1.2);
+  add(g,GEO.box,M.f,.32,.75,1.0,-1.05,-.15,-.3);add(g,GEO.box,M.a,.36,.08,1.04,-1.05,.25,-.3);for(const z of[-.6,-.3,0])add(g,GEO.box,M.dark,.34,.6,.04,-1.07,-.18,z);
+  add(g,GEO.cylZ,M.chrome,.05,.05,.6,-.95,.45,.55);add(g,GEO.box,M.f,.1,.1,.08,-.98,.45,.85);add(g,GEO.sph,M.chrome,.07,.07,.07,-1.03,.45,.88);
+  add(g,GEO.box,M.dark,.04,.3,.5,.9,.1,.35);add(g,GEO.box,M.chrome,.05,.36,.04,.91,.1,.62);add(g,GEO.box,M.chrome,.05,.36,.04,.91,.1,.08);
+  add(g,GEO.box,M.a,1.3,.7,.06,0,0,-1.13);bolts(g,[[-.55,.28,-1.17],[.55,.28,-1.17],[-.55,-.28,-1.17],[.55,-.28,-1.17]],.06);
+  break}
+ case'cluster':{ // box + one heavy tube
+  sidePlate(g,-.95,-.15,-.3,1.0,1.6,-1);handle(g,-1.0,.55,-.3,1.2,-1);
+  for(const z of[-.6,.9])add(g,GEO.hexZ,M.dark,.76,.76,.1,0,.1,z+.0);
+  hatch(g,-.5,.8,-1.0,.6,.45);hatch(g,.5,.8,-1.0,.6,.45);
+  for(const e of[-1,1])add(g,GEO.box,M.chrome,.06,.06,.4,e*.75,.55,1.3);
+  add(g,GEO.box,M.f,.4,.3,.4,-.4,-.85,.7);add(g,GEO.box,M.f,.4,.3,.4,.4,-.85,.7);
+  K.pipe(g,[-.95,.35,.6],[-.68,.45,1.1],.05,M.dark);
+  lug(g,0,1.3,-.5);
+  break}
+ case'beam':{ // laser: tapered body + barrel with alternating rings
+  for(let i=0;i<3;i++)for(const x of[-.15,0,.15])add(g,GEO.box,M.pipe,.04,.2,.5,x,.38,1.375+i*.75);
+  K.pipe(g,[-.6,-.2,-.3],[-.34,-.15,.85],.06);K.pipe(g,[-.55,-.4,-.4],[-.2,-.34,.85],.05,M.dark);
+  {const sd=G(g,-.7,0,-1.05);sd.rotation.y=.068;add(sd,GEO.box,M.f,.06,.95,1.0,-.02,0,0);K.turbine(sd,-.05,0,0,.34,'x',-1,1.1)}
+  add(g,GEO.box,M.f,.62,.1,.55,0,-.36,.2);for(const e of[-1,1])add(g,GEO.cylZ,M.pipe,.07,.07,.45,e*.2,-.45,.2);
+  add(g,GEO.box,M.f,1.0,.6,.08,0,-.1,-1.72);bolts(g,[[-.4,.12,-1.77],[.4,.12,-1.77],[-.4,-.32,-1.77],[.4,-.32,-1.77]],.06);
+  break}
+ case'quadm':{ // compact box, 2x2 tubes
+  sidePlate(g,-.9,-.1,-.2,.9,1.6,-1);handle(g,-.97,.5,-.2,1.0,-1);
+  for(const e of[-1,1])add(g,GEO.box,M.f,.1,1.3,.26,e*.92,-.05,1.12);
+  hatch(g,0,.75,-.88,1.2,.4);
+  for(const z of[-.5,.5]){add(g,GEO.box,M.f,.22,.28,.36,-.98,-.6,z);add(g,GEO.cylX,M.chrome,.07,.07,.26,-1.06,-.6,z)}
+  K.pipe(g,[.9,.35,-.4],[.92,-.5,.4],.05,M.dark);
+  lug(g,-.6,.75,.5);
+  break}
+ case'ripple':{ // long box on skirt, 3x2 tubes
+  add(g,GEO.box,M.f,.08,.9,2.2,-.89,.05,-.1);for(let i=0;i<5;i++)add(g,GEO.box,M.dark,.04,.75,.05,-.94,.05,-1.0+i*.45);
+  bolts(g,[[-.95,.48,-1.12],[-.95,.48,.92],[-.95,-.38,-1.12],[-.95,-.38,.92]],.06);
+  for(const z of[-.9,0,.9]){add(g,GEO.box,M.f,1.76,.08,.14,0,.69,z)}
+  add(g,GEO.box,M.a,.6,.06,.6,-.4,.68,-.45);
+  K.pipe(g,[.86,-.3,-1.2],[.88,.3,.6],.05,M.dark);
+  for(const e of[-1,1])add(g,GEO.box,M.f,.1,1.15,.22,e*.83,-.05,1.45);
+  lug(g,.5,.65,.45);
+  break}
+ case'shell':{ // tapered breech + cannon; brass ejects from the side port
+  const sd=G(g,-.6,0,-.4);sd.rotation.y=.124;
+  add(sd,GEO.box,M.dark,.06,.36,.62,-.02,.08,.1);add(sd,GEO.box,M.chrome,.08,.06,.7,-.03,.29,.1);add(sd,GEO.box,M.chrome,.08,.06,.7,-.03,-.13,.1);
+  add(sd,GEO.box,M.f,.18,.3,.5,-.06,-.4,-.55);
+  for(const e of[-1,1])add(g,GEO.cylZ,M.pipe,.08,.08,.65,e*.13,-.22,.62);
+  add(g,GEO.box,M.f,.5,.12,.3,0,-.22,.5);
+  for(let i=0;i<3;i++)for(const e of[-1,1])add(g,GEO.box,M.dark,.03,.1,.32,e*.255,.1,2.3+i*.45);
+  add(g,GEO.box,M.f,.6,.06,.18,0,.38,2.75);add(g,GEO.box,M.f,.06,.1,.12,0,.44,2.75);
+  K.pipe(g,[.4,.2,-1.0],[.27,.05,.15],.05,M.dark);
+  break}
+ case'chaingun':{ // twin-barrel MG, ammo box + belt on the outboard side
+  add(g,GEO.box,M.f,.45,.6,.85,-.95,-.1,-.2);add(g,GEO.box,M.a,.49,.06,.89,-.95,.23,-.2);add(g,GEO.box,M.chrome,.1,.05,.2,-.95,.28,-.5);
+  K.pipe(g,[-.95,.25,.15],[-.55,.45,.6],.1,M.dark);
+  for(const e of[-1,1])add(g,GEO.cylZ,M.dark,.2,.2,.5,e*.22,0,1.45);
+  add(g,GEO.box,M.f,.62,.1,.12,0,-.19,2.5);add(g,GEO.box,M.f,.12,.1,.12,0,-.1,2.5);
+  add(g,GEO.cylZ,M.chrome,.04,.04,.45,.5,.35,.7);add(g,GEO.sph,M.chrome,.06,.06,.06,.5,.35,.95);add(g,GEO.box,M.f,.08,.08,.08,.5,.3,.5);
+  add(g,GEO.box,M.a,1.0,.5,.06,0,0,-.93);bolts(g,[[-.4,.18,-.97],[.4,.18,-.97],[-.4,-.18,-.97],[.4,-.18,-.97]],.05);
+  break}
+ case'sniper':{ // narrow receiver, long thin barrel, scope on top
+  add(g,GEO.cylZ,M.glass,.16,.16,.03,0,.62,1.01);add(g,GEO.cylZ,M.f,.22,.22,.12,0,.62,-.55);
+  add(g,GEO.cyl,M.chrome,.07,.12,.07,0,.86,.2);add(g,GEO.cylX,M.chrome,.07,.07,.12,-.24,.62,.2);
+  K.pipe(g,[0,-.3,.6],[0,-.06,1.9],.05,M.f,false);add(g,GEO.box,M.f,.32,.06,.12,0,-.04,1.9);
+  add(g,GEO.cylX,M.chrome,.04,.04,.24,-.52,.15,-.25);add(g,GEO.sph,M.chrome,.07,.07,.07,-.65,.15,-.25);
+  add(g,GEO.box,M.f,.14,.45,.5,-.47,-.08,.1);add(g,GEO.box,M.dark,.15,.04,.42,-.47,.08,.1);
+  for(let i=0;i<3;i++)add(g,GEO.box,M.f,.06,.06,.18,0,.28,3.4+i*.55);
+  add(g,GEO.box,M.f,.6,.5,.06,0,-.05,-1.53);bolts(g,[[-.22,.15,-1.57],[.22,.15,-1.57],[-.22,-.25,-1.57],[.22,-.25,-1.57]],.05);
+  break}
+ case'buzzsaw':{ // rotary: barrels spin on o.spin; static parts only here
+  add(g,GEO.cylZ,M.f,.46,.46,.22,0,0,1.1);bolts(g,[[.33,.33,1.22],[-.33,.33,1.22],[.33,-.33,1.22],[-.33,-.33,1.22]],.06);
+  add(g,GEO.cylX,M.f,.5,.5,.32,-.97,-.05,-.2);add(g,GEO.cylX,M.chrome,.18,.18,.36,-.97,-.05,-.2);add(g,GEO.ring,M.dark,.42,1,.42,-1.13,-.05,-.2,0,0,PI/2);
+  K.pipe(g,[-.92,.32,.15],[-.42,.36,1.0],.1,M.dark);
+  for(let i=0;i<4;i++)add(g,GEO.box,M.dark,.9,.05,.05,-.1,.66,-.75+i*.18);
+  add(g,GEO.box,M.f,.6,.25,.4,-.5,-.65,.6);
+  add(g,GEO.box,M.a,1.1,.6,.06,0,.05,-1.03);bolts(g,[[-.45,.25,-1.07],[.45,.25,-1.07],[-.45,-.15,-1.07],[.45,-.15,-1.07]],.06);
+  break}
+ case'bolt':{ // ballista: long stock, swept bow arms, steel bolt on top
+  for(const e of[-1,1])K.piston(g,[e*.42,-.15,.55],[e*1.0,-.12,2.65],.06);
+  add(g,GEO.cylX,M.pipe,.22,.22,.6,0,.05,-.85);for(const e of[-1,1])add(g,GEO.hexZ,M.f,.3,.3,.1,e*.35,.05,-.85,0,PI/2,0);
+  add(g,GEO.box,M.chrome,.06,.06,.6,.0,-.17,-.6);
+  for(const e of[-1,1]){add(g,GEO.box,M.f,.06,.14,3.6,e*.43,.1,1.6);bolts(g,[[e*.47,.1,.2],[e*.47,.1,1.6],[e*.47,.1,3.0]],.05)}
+  for(const z of[-.2,2.6])add(g,GEO.box,M.f,.84,.12,.24,0,-.38,z);
+  add(g,GEO.box,M.a,.7,.55,.06,0,0,-1.23);
+  break}
+ case'grapeshot':{ // canister gun, wide barrel
+  for(let i=0;i<4;i++){const a=i/4*TAU+PI/4;add(g,GEO.box,M.f,.1,.1,.85,Math.cos(a)*.7,.05+Math.sin(a)*.7,2.13,0,0,a)}
+  add(g,GEO.cylZ,M.dark,.14,.14,.9,0,-.75,1.15);for(const z of[.75,1.55])add(g,GEO.box,M.f,.2,.16,.12,0,-.66,z);
+  for(const y of[-.3,.2]){add(g,GEO.cylZ,M.b,.19,.19,.7,-.95,y,-.4);add(g,GEO.cylZ,M.t,.195,.195,.05,-.95,y,-.15);add(g,GEO.cylZ,M.dark,.2,.2,.08,-.95,y,-.4)}
+  add(g,GEO.box,M.f,.08,.95,.12,-.78,-.05,-.75);add(g,GEO.box,M.f,.08,.95,.12,-.78,-.05,-.05);
+  add(g,GEO.box,M.dark,.04,.06,.9,-1.15,-.05,-.4);
+  add(g,GEO.box,M.a,1.1,.7,.06,0,0,-1.23);
+  break}
+ case'gemini':{ // twin laser: box + two barrels with coil rings
+  {const sd=G(g,-.75,0,-.3);fins(sd,0,.0,-.6,5,.28,.75,-1,.2)}
+  add(g,GEO.box,M.f,1.0,.22,.4,0,-.28,1.15);for(const e of[-1,1])add(g,GEO.cylZ,M.pipe,.08,.08,.45,e*.36,-.32,1.15);
+  for(const e of[-1,1])for(const z of[1.67,2.22])add(g,GEO.box,M.pipe,.04,.12,.3,e*.36,.2,z);
+  K.pipe(g,[.6,.3,.8],[.45,.12,1.25],.05,M.dark);K.pipe(g,[-.6,.3,.8],[-.45,.12,1.25],.05,M.dark);
+  add(g,GEO.box,M.a,1.1,.5,.06,0,-.05,-1.03);
+  break}
+ case'fae':{ // fuel-air launcher: box + fat tube with a warhead nose
+  for(const z of[.2,1.3])add(g,GEO.cylZ,M.dark,.82,.82,.1,0,.15,z);
+  for(const y of[-.25,.25]){add(g,GEO.cylZ,M.b,.18,.18,1.0,-1.03,y,-.55);for(const z of[-.95,-.15])add(g,GEO.cylZ,M.dark,.19,.19,.06,-1.03,y,z)}
+  add(g,GEO.box,M.f,.12,.85,.14,-.88,0,-.85);add(g,GEO.box,M.f,.12,.85,.14,-.88,0,-.25);
+  K.pipe(g,[-1.03,.4,-.1],[-.62,.45,.45],.05);add(g,GEO.ringV,M.chrome,.1,.1,.5,-1.03,.25,-1.08);add(g,GEO.cylZ,M.f,.03,.03,.1,-1.03,.25,-1.07);
+  hatch(g,.35,.65,-1.15,.5,.5);
+  add(g,GEO.box,M.a,1.2,.6,.06,0,0,-1.63);
+  break}
+ }
+}
 // fold static meshes into one mesh per group+material so detailed frames stay cheap to draw
+// detail groups that never move are folded into their parent (transforms baked into the meshes), so mergeRig can join them with the
+// parent's meshes; anything animated (spinning, oscillating, rolling, tilting) and anything holding an animated piece is left alone
+function flattenDetail(R){
+ if(!R.root.updateMatrix){R._flat.length=0;return}
+ const anim=new Set();for(const sp of R.spin)anim.add(sp.g);for(const o of R.osc)anim.add(o.g);for(const w of R.treads)anim.add(w);for(const w of R.wheels)anim.add(w);for(const p of R.pods||[])anim.add(p);
+ for(const r of R.rcs)anim.add(r.g);
+ const hasAnim=g=>{let f=false;g.traverse(o=>{if(o!==g&&anim.has(o))f=true});return f};
+ for(let i=R._flat.length-1;i>=0;i--){const g=R._flat[i],par=g.parent;
+  if(!par||anim.has(g)||hasAnim(g)||Math.abs(g.scale.x-1)>1e-6||Math.abs(g.scale.y-1)>1e-6||Math.abs(g.scale.z-1)>1e-6)continue;
+  g.updateMatrix();for(const c of g.children.slice()){c.applyMatrix4(g.matrix);par.add(c)}par.remove(g)}
+ R._flat.length=0}
 function mergeRig(R){
  const U=THREE.BufferGeometryUtils;if(!U||typeof U.mergeBufferGeometries!=='function')return;
  const keep=new Set([...R.flames]);for(const r of R.rcs){keep.add(r.f);keep.add(r.c)}if(R.shield)keep.add(R.shield);
@@ -2444,8 +3609,6 @@ function buildWeapon(hand,d,M,add,G,K){
   add(hand,GEO.box,M.f,.7,.8,1.4,0,-.2,.4);add(hand,GEO.prismZ,M.t,.3,.4,1.6,0,.95,1.4);o.muzzle=G(hand,0,.3,3.5);break;
  case'cleaver':{add(hand,GEO.box,M.f,.9,.9,1.5,0,0,.35);add(hand,GEO.box,M.chrome,1.3,.2,.3,0,0,1.15);add(hand,GEO.prismZ,M.t,.6,1.1,.5,0,0,1.3);
   const bm=new THREE.Mesh(GEO.prismZ,M.beam);bm.scale.set(.2,1.15,9);bm.position.set(0,0,5.8);hand.add(bm);o.beam=bm;o.muzzle=G(hand,0,0,4.5);break}
-  add(hand,GEO.hexZ,M.b,.28,.28,2.3,0,.14,2.6);add(hand,GEO.hexZ,M.chrome,.44,.44,.4,0,.14,3.85);add(hand,GEO.hexZ,M.dark,.3,.3,.05,0,.14,4.06);add(hand,GEO.oct,M.hot,.14,.14,.14,0,-.22,3.9);
-  if(K)K.pipe(hand,[0,-.5,1.8],[0,.02,2.4],.1);add(hand,GEO.prismZ,M.t,.35,.6,1.2,0,.6,.8);o.muzzle=G(hand,0,.14,4.1);break;
  case'arc':add(hand,GEO.box,M.f,.8,.9,2,0,0,.7);for(const s of[-1,1]){add(hand,GEO.box,M.b,.16,.22,2.5,s*.32,.1,2.7);add(hand,GEO.spikeZ,M.chrome,.2,.26,.5,s*.32,.1,4.15)}
   for(let i=0;i<3;i++)add(hand,GEO.hexZ,M.coil,.44,.44,.12,0,.1,1.9+i*.45);add(hand,GEO.oct,M.coil,.22,.22,.22,0,.1,3.9);add(hand,GEO.prismZ,M.t,.4,.7,1.2,0,.62,.7);o.muzzle=G(hand,0,.1,4);break;
  case'carbine':add(hand,GEO.taperZ,M.f,.7,.95,2.6,0,0,.9);add(hand,GEO.box,M.b,.26,.3,2,0,.1,3.1);add(hand,GEO.box,M.f,.3,.9,.4,0,-.7,.9,.25,0,0);add(hand,GEO.prismZ,M.t,.4,.6,1.2,0,.55,.8);
@@ -2541,6 +3704,7 @@ function poseRig(m,dt,t){
  // turbines idle, then howl under boost; tread wheels roll with ground speed
  R.spinRate=lerp(R.spinRate||5,5+(m.boosting||m.thrusting?14:0)+(m.ab?26:0)+(m.qbT>0?20:0),1-Math.exp(-dt*3));
  for(const sp of R.spin)sp.g.rotation.z+=dt*R.spinRate*sp.spd;
+ for(const o of R.osc)o.g[o.prop][o.ax]=o.base+o.amp*Math.sin(t*o.f+o.ph);
  if(R.treads.length){const roll=vf*dt/.7;for(const w of R.treads)w.rotation.x+=roll}
  if(!R.headLost)R.head.rotation.x=lerp(R.head.rotation.x,-m.pitch*.45,k);
  for(const key of['r','l']){
