@@ -646,7 +646,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   </div>
   <div class="trBtns" hidden><div id="trSong"></div><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0411 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0412 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
 <div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
@@ -4125,7 +4125,7 @@ function ground(tex0,color,rep,size=30000,o={}){
   for(let c=0;c<3;c++)C[k*3+c]=((A[c]*(1-t)+B[c]*t)*(1-q)+Cc[c]*q)*sh}
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const a=j*(N+1)+i,b=a+1,c=a+N+1,d=c+1;I.push(a,c,b,b,c,d)}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('uv',new THREE.BufferAttribute(U,2));g.setAttribute('normal',new THREE.BufferAttribute(Nn,3));g.setAttribute('color',new THREE.BufferAttribute(C,3));g.setIndex(I);
- world.disposables.push(g);const mesh=new THREE.Mesh(g,m);mesh.receiveShadow=true;mesh.userData.noBatch=true;world.group.add(mesh);return mesh}
+ world.disposables.push(g);const mesh=new THREE.Mesh(g,m);mesh.receiveShadow=true;mesh.userData.noBatch=true;world.group.add(mesh);world.groundMat=m;return mesh}
 // ---------------------------------------------------------------- terrain
 // a heightfield for maps with hills, ridges and canyons. groundH reads the same triangles the mesh draws (diagonal b-c),
 // so feet, shots, casings and decals meet the surface you see. Flat maps have no field and the ground is y=0.
@@ -4445,7 +4445,7 @@ const WEATHER={
  ash:{l:'Falling ash',over:.6,fogK:.42,tint:0x6a5650,p:'ash',dens:1,wl:.3}};
 // per arena: the first entry names the arena's own time (as built); the rest are TOD / WEATHER keys
 const COND={
- basin:{t:['Dusk','day','night'],w:['clear','dust','storm']},
+ basin:{t:['Dusk','dawn','night'],w:['clear','dust','storm']},
  peaks:{t:['Day','dusk','night'],w:['clear','snow','fog']},
  grid:{t:['Night','dusk','day'],w:['clear','rain','storm']},
  pines:{t:['Day','dawn','night'],w:['clear','rain','fog']},
@@ -4598,7 +4598,7 @@ function thunder(d){if(!AU.ctx||AU.ctx.state!=='running')return;const c=AU.ctx,t
  if(d<1600)noi(o,t,.3,'highpass',2800,900,.6,.22,.002);
  noi(o,t+.02,2.8+rand(0,1.6),'lowpass',800,60,.5,.55,.05,true);
  for(let i=0,tt=t+.25;i<4;i++){tt+=rand(.3,.9);noi(o,tt,rand(1.2,2.4),'lowpass',rand(220,480),55,.6,rand(.18,.38),.12,true)}}
-function buildArena(id,cond){buildArenaWorld(id);world.fill=null;const ind=applyConditions(id,cond||[0,0]);updateEnv(ind||ENV_INDOOR[id]||null,Math.max(world.fill||0,FILL[id]||.4));WXS.h0=hemi.intensity;auSpace(id)}
+function buildArena(id,cond){world.groundMat=null;buildArenaWorld(id);world.fill=null;const ind=applyConditions(id,cond||[0,0]);updateEnv(ind||ENV_INDOOR[id]||null,Math.max(world.fill||0,FILL[id]||.4));WXS.h0=hemi.intensity;auSpace(id)}
 function buildArenaWorld(id){
  clearWorld();world.kind=id;
  const R=seeded({basin:11,dock:23,grid:37,pines:51,port:67,rigs:79,ice:83,foundry:97,ruin:101,peaks:113,canyon:127,hills:131,fen:139,zero:149,works:157}[id]||5);
@@ -8767,7 +8767,7 @@ const DIFF_NOTE={rookie:'Loose aim, rare dodges, light hits. Only one frame hunt
 const THUMB_KEY='thumbs.v18';let THUMBS=store.get(THUMB_KEY,{})||{},thumbBusy=false;
 const THUMB_VIEW={works:[[1900,420,1300],[-200,200,0]],fen:[[1500,330,1300],[150,60,0]],zero:[[1500,420,1700],[0,-80,0]],ice:[[2600,220,2400],[1500,40,1100]],foundry:[[1400,240,1700],[0,90,0]],ruin:[[2700,560,2800],[0,60,0]],basin:[[2300,300,2600],[0,90,-300]],dock:[[1900,360,1900],[0,120,-200]],grid:[[2100,520,2400],[0,180,0]],pines:[[2600,260,2300],[-600,40,0]],port:[[2400,240,2600],[0,200,0]],rigs:[[900,170,1300],[-300,90,-500]],peaks:[[1500,280,-1700],[-900,240,1100]],canyon:[[1250,40,280],[1900,120,40]],hills:[[2000,240,2200],[-200,40,200]]};
 // previews of an arena under a non-default time / weather: rendered one at a time when picked, kept (newest 36) between visits
-const CTHUMB_KEY='cthumbs.v1';let CTHUMBS=store.get(CTHUMB_KEY,{})||{};
+const CTHUMB_KEY='cthumbs.v2';let CTHUMBS=store.get(CTHUMB_KEY,{})||{};
 const thumbKey=(id,c)=>id+':'+c[0]+','+c[1];
 function thumbOf(id){const c=condOf(id);return c[0]||c[1]?CTHUMBS[thumbKey(id,c)]:THUMBS[id]}
 const THUMB_TRIED=new Set();
