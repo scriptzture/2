@@ -266,6 +266,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
 .sortie:hover{filter:brightness(1.12)}
 .sortie:disabled{background:#3a3c41;color:var(--signal);cursor:not-allowed;filter:none}
 .keys{font-family:var(--f-num);font-size:11.5px;color:var(--dim);line-height:1.7}
+.keys .kgH{font-family:var(--f-ui);font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--signal);margin:6px 0 3px}.keys .kgH:first-child{margin-top:0}
+.keys .kg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.keys .kk{display:flex;align-items:center;gap:7px;min-width:0;line-height:1.3}
+.keys .kk b{flex:none;min-width:38px;text-align:center;padding:1px 4px;border:1px solid var(--line);background:rgba(222,226,232,.05);color:var(--paper);font-weight:400;font-size:10.5px;letter-spacing:.04em}
+.keys .kk i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
 .keys b{color:var(--paper);font-weight:400}
 .ghost{background:none;border:1px solid var(--line);padding:6px 10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .ghost:hover{color:var(--paper);border-color:var(--paper)}
@@ -641,7 +646,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   </div>
   <div class="trBtns" hidden><div id="trSong"></div><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0408 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0409 · 2026.10.21</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
 </div>
 
 <div id="con" hidden><div id="conLog"></div><div class="conRow"><span>›</span><input id="conIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Console"></div></div>
@@ -7678,7 +7683,10 @@ function renderSortie(){
  const rows=[['Frame',build.callsign||'ASH-01'],['Armor',s.ap+' AP'],['Load',`${s.carried} / ${s.load} T`,s.over],['Boost',Math.round(s.boost*3.6)+' km/h'],['Right arm',P('wr')],['Left arm',P('wl')],['Shoulders',build.sh2&&build.sh2!=='none'?(build.sh2===build.sh?'2× '+P('sh'):P('sh')+' + '+P('sh2')):P('sh')]];
  const sum=$('#frameSum');sum.innerHTML='';for(const[k,v,bad]of rows){const a=document.createElement('span');a.textContent=k;const b=document.createElement('b');b.textContent=v;if(bad)b.className='overload';sum.append(a,b)}
  $('#keys').innerHTML=isTouch?'<b>Left thumb</b> move · <b>right thumb</b> look<br><b>Buttons</b> jump, boost, quick boost, assault boost, fire, lock':
-  '<b>WASD</b> move · <b>Mouse</b> aim<br><b>Shift</b> boost · <b>Space</b> jump / ascend · <b>C</b> descend<br><b>F</b> quick boost · <b>R</b> hold for assault boost<br><b>LMB</b> left arm · <b>RMB</b> right arm · <b>Q</b> left shoulder · <b>E</b> right shoulder<br><b>Tab</b> switch lock · <b>V</b> swap shoulder · <b>G</b> hold to self-destruct · <b>Esc</b> pause';
+  [['Movement',[['WASD','Move'],['Mouse','Aim'],['Shift','Boost'],['Space','Jump / ascend'],['C','Descend'],['F','Quick boost'],['Hold R','Assault boost']]],
+   ['Weapons',[['LMB','Left arm'],['RMB','Right arm'],['Q','Left shoulder'],['E','Right shoulder'],['Tab','Switch lock']]],
+   ['Other',[['V','Camera side'],['Hold G','Self-destruct'],['Esc','Pause']]]]
+   .map(([h,L])=>`<div class="kgH">${h}</div><div class="kg">${L.map(([k,a])=>`<span class="kk"><b>${k}</b><i>${a}</i></span>`).join('')}</div>`).join('');
  updateDeploy();
 }
 function updateDeploy(){
