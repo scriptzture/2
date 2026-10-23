@@ -696,7 +696,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline
   </div>
   <div class="trBtns" hidden><div id="trSong"></div><div id="trSty"><button data-s="action">Action</button><button data-s="cinematic">Cinematic</button><button data-s="minimal">Minimal</button></div><button id="trPlay" class="trB">▶ Trailer</button><button id="trRec" class="trB rec">● Record trailer</button></div>
   <div class="press" id="tPress">Press any key</div>
-  <div class="foot"><span id="tBuild">BUILD 0501 · 2026.10.23</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
+  <div class="foot"><span id="tBuild">BUILD 0503 · 2026.10.23</span><span id="tTrack">♪ MEASURED MARCH</span><span>KEYBOARD + MOUSE · TOUCH</span></div>
   <div class="sysreq"><span class="rq">System requirements: a recent desktop browser with WebGL (Chrome, Edge, Firefox or Safari) · 4-core CPU · 8 GB RAM · dedicated or recent integrated graphics · </span><b>Desktop highly recommended</b></div>
 </div>
 
@@ -5613,11 +5613,11 @@ const WXS={W:null,id:null,prec:null,time:0};const _wc1=new THREE.Color(),_wc2=ne
 const clum=c=>c.r*.3+c.g*.55+c.b*.15;
 function applyConditions(id,c){
  Object.assign(WXS,{W:null,id,prec:null,time:0,bolt:null,sky0:null,bt:rand(4,9),fl:9,acc:0,macc:new Map(),lk:1});
- const C=COND[id];if(!C||(!c[0]&&!c[1]))return null;
+ world.night=false;const C=COND[id];if(!C||(!c[0]&&!c[1]))return null;
  if(C.lit)return world.lit?world.lit(c[0]):null;
  const fog=scene.fog,fog0=fog.color.getHex(),sk=Object.assign({},world.skyOpt||{}),far=[];
  world.group.traverse(o=>{const m=o.material;if(m&&!Array.isArray(m)&&m.isMeshBasicMaterial&&m.fog===false&&m.blending!==THREE.AdditiveBlending&&!far.includes(m))far.push(m)});
- if(c[0]){const T=TOD[C.t[c[0]]];
+ if(c[0]){const T=TOD[C.t[c[0]]];world.night=!!T.night;
   // the map keeps its sun bearing (dawn comes from the other side); only the height changes
   const az=Math.atan2(sunDir.z,sunDir.x)+(T.flip?Math.PI:0),ce=Math.sqrt(1-T.el*T.el);sunDir.set(Math.cos(az)*ce,T.el,Math.sin(az)*ce).normalize();
   Object.assign(sk,T.sky);fog.color.setHex(T.fog).lerp(_wc1.setHex(fog0),.22);fog.near*=T.fogK;fog.far*=T.fogK;
@@ -12315,21 +12315,31 @@ function glintSamples(R,M,pal){
  R.root.traverse(o=>{if(!o.isMesh||!o.parent||o.material.transparent)return;const f=shine(o.material);if(!f)return;C.push({o,f})});
  // up to five points of bare metal, and up to seven more on the paint if the scheme is light enough to shine
  C.sort(()=>Math.random()-.5);const out=[],P=[];let nm=0,np=0;
- for(const{o,f}of C){const metal=o.material===M.chrome;if(metal?nm>=5:np>=7)continue;o.getWorldPosition(_gp);if(P.some(q=>q.distanceTo(_gp)<1.6))continue;P.push(_gp.clone());
+ for(const{o,f}of C){const metal=o.material===M.chrome;if(metal?nm>=8:np>=10)continue;o.getWorldPosition(_gp);if(P.some(q=>q.distanceTo(_gp)<1.3))continue;P.push(_gp.clone());
   if(metal)nm++;else np++;const q=o.quaternion;out.push({g:o.parent,p:o.position.clone(),f:metal?.8:f,n:GLINT_N.map(v=>new V3(v[0],v[1],v[2]).applyQuaternion(q))})}
  return out}
-function rigGlints(R,k,t){if(!R||!R.root||R.root.visible===false||!R.glintS)return;
- const S=R.glintS;
- for(let i=0;i<S.length;i++){const sm=S[i],e=sm.g.matrixWorld&&sm.g.matrixWorld.elements;if(!e)continue;const px=sm.p.x,py=sm.p.y,pz=sm.p.z;
+// how much sun there is to catch: strong clear daylight up to 1.3; overcast, dusk haze and rain bring it down; night leaves a faint moon glint
+function glintSun(){if(world.night)return .15;return clamp((sun.intensity-.25)/1.05,0,1.3)}
+const _gw=new THREE.Color(0xffffff),_gc=new THREE.Color();
+function rigGlints(R,k,t,S){if(!R||!R.root||R.root.visible===false||!R.glintS)return;
+ const sm1=clamp(S,0,1),E=150-78*sm1,thr=.06-.02*sm1,far=1600+900*sm1,amp=k*(.35+.65*Math.min(1.2,S));
+ _gc.copy(sun.color).lerp(_gw,.5);
+ const G=R.glintS;
+ for(let i=0;i<G.length;i++){const sm=G[i],e=sm.g.matrixWorld&&sm.g.matrixWorld.elements;if(!e)continue;const px=sm.p.x,py=sm.p.y,pz=sm.p.z;
   _gp.set(e[0]*px+e[4]*py+e[8]*pz+e[12],e[1]*px+e[5]*py+e[9]*pz+e[13],e[2]*px+e[6]*py+e[10]*pz+e[14]);
-  _gv.copy(camera.position).sub(_gp);const d=_gv.length();if(!(d>1)||d>1600)continue;_gv.multiplyScalar(1/d);_gh.copy(sunDir).add(_gv).normalize();
+  _gv.copy(camera.position).sub(_gp);const d=_gv.length();if(!(d>1)||d>far){sm.pg=0;continue}_gv.multiplyScalar(1/d);_gh.copy(sunDir).add(_gv).normalize();
   let best=0;for(const n of sm.n){const x=e[0]*n.x+e[4]*n.y+e[8]*n.z,y=e[1]*n.x+e[5]*n.y+e[9]*n.z,z=e[2]*n.x+e[6]*n.y+e[10]*n.z;const l=Math.hypot(x,y,z)||1;const dt=(x*_gh.x+y*_gh.y+z*_gh.z)/l;if(dt>best)best=dt}
-  let g=Math.pow(best,140)*k*sm.f*(.75+.25*Math.sin(t*3.1+i*1.7));if(sunDir.dot(_gv)<-.2)g*=.4;if(g<.07)continue;
-  const sp=glintSprite();sp.visible=true;sp.position.copy(_gp).addScaledVector(_gv,1.2);const sz=(1.2+d*.026)*Math.min(1,g*1.4)*(.7+.3*sm.f);sp.scale.set(sz,sz,1);sp.material.opacity=Math.min(1,g);sp.material.rotation=t*.4+i}}
+  let g=Math.pow(best,E)*amp*sm.f*(.75+.25*Math.sin(t*3.1+i*1.7));if(sunDir.dot(_gv)<-.2)g*=.45;
+  // a glint that flicks on (a plate swinging through the sun) flares for a moment
+  if(g>.5&&(sm.pg||0)<.3)sm.fl=.16;sm.pg=g;if(sm.fl>0)sm.fl-=1/60;
+  if(g<thr&&!(sm.fl>0))continue;
+  const fl=sm.fl>0?sm.fl/.16:0,sp=glintSprite();sp.visible=true;sp.position.copy(_gp).addScaledVector(_gv,1.2);
+  const sz=(1.2+d*.026)*Math.min(1,Math.max(g,fl*.6)*1.4)*(.7+.3*sm.f)*(1+fl*1.3);sp.scale.set(sz,sz,1);sp.material.opacity=Math.min(1,Math.max(g,fl*.8));sp.material.rotation=t*.4+i;sp.material.color.copy(_gc)}}
 function updateGlints(t){GLINT.n=0;
  if(THREE.Sprite){const st=game.state,k=GLINT_K[world.kind]===undefined?.6:GLINT_K[world.kind];
-  if(k>0){if((st==='title'||st==='garage')&&garageRig)rigGlints(garageRig,k,t);
-   else if(st==='fight'||st==='intro'||st==='paused'||st==='results')for(const m of mechs)if(m.alive)rigGlints(m.rig,k,t)}}
+  if(k>0){const hang=world.kind==='hangar',S=hang?.6:glintSun();
+   if((st==='title'||st==='garage')&&garageRig)rigGlints(garageRig,k,t,S);
+   else if(st==='fight'||st==='intro'||st==='paused'||st==='results')for(const m of mechs)if(m.alive)rigGlints(m.rig,k,t,S)}}
  for(let i=GLINT.n;i<GLINT.pool.length;i++)GLINT.pool[i].visible=false}
 // main loop
 // =====================================================================
